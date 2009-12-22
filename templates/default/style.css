@@ -1,7 +1,7 @@
 body {
   margin: 0;
   margin-top: 5px;
-  background: #a1cf2f url(media/bg.gif) repeat;
+  background: #fff url(media/bg.jpg) fixed top center repeat-x;
 }
 
 * {
@@ -37,7 +37,7 @@ body {
 #app-subtitle {
   margin-left: 10px;
   font-size: 17px;
-  color: #a1cf2f;
+  color: #003380;
 }
 
 #side-menu {
@@ -57,7 +57,7 @@ body {
 #main-content {
   width: 740px;
   padding: 5px;
-  background: #fff url(media/main-bg.png) top left repeat-x;
+  background: #fff;
 }
 
 #nav-links {
@@ -98,23 +98,50 @@ body {
   color: #000;
 }
 
-#headerInfo {
+#header-info {
   padding: 5px;
 }
 
 #info-box {
-  background: #fff;
-  border: 1px solid #999;
-  padding: 5px;
+  background: #8effbb;
+  border: 1px solid #00ab44;
+  padding: 3px;
+  margin-bottom: 3px;
 }
 
-#loginForm {
+#info-box .error {
+  font-weight: bold;
+  color: red;
+  font-size: 120%;
+}
+
+#info-box .info {
+  color: #003380;
+  font-size: 120%;
+}
+
+#login-form {
   padding: 10px;
   padding-top: 120px;
   background: #ffd700 url(media/login-bg.png) top left no-repeat;
   width: 400px;
   margin: 0 auto;
 }
+
+#simple-search {
+  border: 1px solid #999;
+  padding: 5px;
+  background: #ccc;
+}
+
+#simple-search input {
+  display: inline;
+}
+
+#simple-search #simple-keywords {
+  width: 80%;
+}
+
 
 /*
  * Tabs CSS
@@ -267,7 +294,7 @@ div.tabs
 }
 
 .alter-row {
-  background: #a1cf2f;
+  background: #ccc;
 }
 
 .alter-row2 {
@@ -288,7 +315,7 @@ div.tabs
   padding-bottom: 5px;
   margin-bottom: 5px;
   border-bottom: 1px solid #999;
-  color: #a1cf2f;
+  color: #003380;
 }
 
 .block input[type=text],select,textarea {
@@ -301,13 +328,6 @@ div.tabs
 .container_12 {
   background: #fff url(media/header-bg.png) right top no-repeat;
   border: 1px solid #777;
-}
-
-.error {
-  border: 1px dotted #f00;
-  color: #f00;
-  padding: 3px;
-  margin: 3px;
 }
 
 /* OPAC List */
@@ -373,7 +393,7 @@ div.tabs
 
 .tblHead {
   font-weight: bold;
-  color: #a1cf2f;
+  color: #003380;
 }
 
 .tblHead,.tblContent {

@@ -81,7 +81,7 @@ class Biblio extends SimbioModel {
         switch ($str_block_type) {
             case 'simple search' :
                 $_block = '<form name="simple-search" action="index.php" method="get">
-                    <input type="text" name="keywords" />
+                    <input type="text" name="keywords" id="simple-keywords" />
                     <input type="submit" name="search" value="'.__('Search').'" />
                     </form>';
                 return Utility::createBlock($_block, 'Simple search', 'simple-search');
@@ -138,7 +138,8 @@ class Biblio extends SimbioModel {
      * @return  void
      */
     public function init(&$obj_framework, $str_args) {
-
+        $obj_framework->addInfo('BIBLIO_INIT', 'Biblio module initialized!');
+        $obj_framework->addError('BIBLIO_INIT_ERROR', 'Error on Biblio module initialization!');
     }
 
 
@@ -186,7 +187,7 @@ class Biblio extends SimbioModel {
      * @return  array/boolean       an array of status flag and messages or boolean true if validation succed
      */
     public function validate(&$obj_framework) {
-
+        return true;
     }
 }
 ?>

@@ -12,7 +12,7 @@
     <div class="grid_12" id="header">
     <?php echo $app_logo; ?>
     <div id="app-title"><?php echo $app_title; ?>
-	<div id="app-subtitle"><?php echo $app_subtitle; ?></div>
+    <div id="app-subtitle"><?php echo $app_subtitle; ?></div>
     </div>
     </div>
     <div class="clear">&nbsp;</div>
@@ -28,32 +28,35 @@
 
     <!--application navigation menu/side menu-->
     <div class="grid_2" id="side-menu">
+        <!-- navigation -->
+        <?php echo $navigation_links; ?>
+        <!-- navigation end -->
+
         <!-- language selection -->
         <?php echo $this->getBlock('language select'); ?>
         <!-- language selection end -->
-
-        <!-- simple search -->
-        <?php echo Biblio::getBlock($this, 'simple search'); ?>
-        <!-- simple search end -->
 
         <!-- advanced search -->
         <?php echo Biblio::getBlock($this, 'advanced search'); ?>
         <!-- advanced search end -->
 
         <!-- license -->
-	<?php echo Utility::createBlock('This Software is Released Under
-	    <a href="http://www.gnu.org/copyleft/gpl.html" title="GNU GPL License" target="_blank">GNU GPL License</a> Version 3.', 'License'); ?>
+        <?php echo Utility::createBlock('This Software is Released Under
+        <a href="http://www.gnu.org/copyleft/gpl.html" title="GNU GPL License" target="_blank">GNU GPL License</a> Version 3.', 'License'); ?>
         <!-- license end -->
 
         <!-- Awards -->
-	<?php echo Utility::createBlock('The Winner in the Category of OSS</br><img src="files/media/logo-inaicta.png" />', 'Awards'); ?>
+        <?php echo Utility::createBlock('The Winner in the Category of OSS</br><img src="files/media/logo-inaicta.png" />', 'Awards'); ?>
         <!-- Awards end -->
     </div>
     <!--application navigation menu/side menu-->
 
     <!--application main content -->
     <div class="grid_9" id="main-content">
-    <div id="info"><?php echo $main_info; ?></div>
+    <?php echo $main_info; ?>
+    <!-- simple search -->
+    <?php echo Biblio::getBlock($this, 'simple search'); ?>
+    <!-- simple search end -->
     <?php echo $main_content; ?>
     </div>
     <!--application main content end -->

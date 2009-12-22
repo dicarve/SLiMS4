@@ -51,8 +51,10 @@ class Simbio {
     private $css = array();
     // errors
     private $errors = array();
-    // content data
-    private $contents = array();
+    // main menu
+    private $main_menu = array();
+    // navigation menu
+    private $navigation_menu = array();
     // page metadata
     private $metadata = array();
 
@@ -96,11 +98,24 @@ class Simbio {
     /**
      * Method to add error information to framework
      *
-     * @param   mixed   $mixed_js : a string or an array of Javascript file to include
+     * @param   string  $str_error_code: error code
+     * @param   string  $str_error_message: error message
      * @return  void
      */
-    public function addError($str_error_ID, $str_error_message) {
-        $this->errors[$str_error_ID] = array('error_id' => $str_error_ID, 'error_message' => $str_error_message);
+    public function addError($str_error_code, $str_error_message) {
+        $this->errors[$str_error_code] = array('code' => $str_error_code, 'message' => $str_error_message);
+    }
+
+
+    /**
+     * Method to add information to framework
+     *
+     * @param   string  $str_info_code: info code
+     * @param   string  $str_info_message: info message
+     * @return  void
+     */
+    public function addInfo($str_info_code, $str_info_message) {
+        $this->infos[$str_info_code] = array('code' => $str_info_code, 'message' => $str_info_message);
     }
 
 
@@ -188,7 +203,7 @@ class Simbio {
                 die();
             }
         } else {
-            /* MYSQL */
+            /* Simbio MYSQL */
             // require the simbio mysql class to emulate MySQLi style
             include SIMBIO_BASE.'Databases/Mysql/Mysql.inc.php';
             // make a new connection object that will be used by all applications
@@ -208,7 +223,10 @@ class Simbio {
         $this->last_query = "DELETE FROM $str_table WHERE $str_criteria";
         $_delete = $this->dbc->query($this->last_query);
         // if an error occur
-        if ($this->dbc->error) { $this->error = $this->dbc->error; return false; }
+        if ($this->dbc->error) {
+            $this->addError('DB_DELETE_FAILED', 'Error deleting data from table '.$str_table.' with query: '.$this->last_query);
+            return false;
+        }
 
         return true;
     }
@@ -218,7 +236,7 @@ class Simbio {
      * Method easily insert record to database table
      *
      * @param   array   $arr_data : an array containing field => value combination
-     * @param   string	$str_table : database table name to be inserted
+     * @param   string  $str_table : database table name to be inserted
      * @return  array   an array of operation status flag and message
      */
     public function dbInsert($arr_data, $str_table) {
@@ -259,7 +277,9 @@ class Simbio {
             ."VALUES ($_str_value)";
         $_insert = $this->dbc->query($this->last_query);
         // if an error occur
-        if ($this->dbc->error) { $this->error = $this->dbc->error; return false; }
+        if ($this->dbc->error) {
+            $this->addError('DB_INSERT_FAILED', 'Error inserting data to table '.$str_table.' with query: '.$this->last_query);
+        }
 
         return true;
     }
@@ -305,23 +325,25 @@ class Simbio {
         $this->last_query = "UPDATE $str_table SET $_set WHERE $str_criteria";
         $_update = $this->dbc->query($this->last_query);
         // if an error occur
-        if ($this->dbc->error) { $this->error = $this->dbc->error; return false; }
+        if ($this->dbc->error) {
+            $this->addError('DB_UPDATE_FAILED', 'Error updating data of table '.$str_table.' with query: '.$this->last_query);
+        }
 
         return true;
     }
 
 
-	/**
-	 * Invoke query to database
-	 * 
-	 * @param	string	$str_query : SQL query to be executed
-	 * @return	object	mysql statement object
-	 */
-	public function dbQuery($str_query) {
-		return $this->dbc->query(Simbio::rewriteQuery($str_query));
-	}
-	
-	
+    /**
+     * Invoke query to database
+     *
+     * @param   string  $str_query : SQL query to be executed
+     * @return  object  mysql statement object
+     */
+    public function dbQuery($str_query) {
+        return $this->dbc->query(Simbio::rewriteQuery($str_query));
+    }
+
+
     /**
      * Method to generate view data
      */
@@ -345,8 +367,11 @@ class Simbio {
                 break;
             case 'language select' :
                 $_block = '<form name="lang-select" id="lang-select" action="index.php" method="get">'
-                    .'<select name="locale" onchange="document.lang-select.submit();">'
-                    .'</select></form>';
+                    .'<select name="locale" onchange="document.lang-select.submit();">';
+                foreach ($this->locales as $_locale) {
+                    $_block .= '<option value="'.$_locale[0].'">'.$_locale[1].'</option>';
+                }
+                $_block .= '</select></form>';
                 return Utility::createBlock($_block, 'Language', 'language');
                 break;
         }
@@ -620,11 +645,11 @@ class Simbio {
         // get available locales
         $_locales_conf = LIBS_BASE.'locales'.DSEP.'locale.inc.php';
         if (file_exists($_locales_conf)) {
-			require LIBS_BASE.'locales'.DSEP.'locale.inc.php';
-			if (isset($locales)) {
-				$this->locales = $locales;
-			}
-		}
+            require LIBS_BASE.'locales'.DSEP.'locale.inc.php';
+            if (isset($locales)) {
+                $this->locales = $locales;
+            }
+        }
 
         // gettext setup
         $_locale = $this->config['locale'];
@@ -688,7 +713,7 @@ class Simbio {
         foreach ($this->modules as $_module_obj) {
             $_validated = $_module_obj->validate($this);
             if ($_validated !== true) {
-                $this->addError($_validated['error_ID'], $_validated['error_message']);
+                $this->addError($_validated['error_code'], $_validated['error_message']);
             }
         }
 
@@ -712,14 +737,6 @@ class Simbio {
      * @return  void
      */
     private function makeFinalOutput() {
-        // check content type
-        // set header
-        if (isset($this->views['content_type'])) {
-            header('Content-type: '.$this->views['content_type']);
-        } else {
-            header('Content-type: text/html');
-        }
-
         /**
          * Core template variables initialization
          *
@@ -747,8 +764,14 @@ class Simbio {
         $app_title = '<a href="index.php" id="app-title-link">'.$this->config['app_title'].'</a>';
         // application subtitle
         $app_subtitle = $this->config['app_subtitle'];
+        // main application information box
+        $main_info = '';
         // main content
         $main_content = '';
+        // main menu links
+        $primary_links = '';
+        // navigation links
+        $navigation_links = '';
 
         // load template config file
         $_tconf = $this->loadTemplateConfig();
@@ -776,16 +799,38 @@ class Simbio {
         $javascripts = $this->loadJS();
         $metadata = $this->loadMetadata();
 
+        // check content type
+        // set header
+        if (isset($this->views['content_type'])) {
+            header('Content-type: '.$this->views['content_type']);
+        } else {
+            header('Content-type: text/html');
+            // show all error and infofmation
+            if ($this->errors || $this->infos) {
+                $main_info = '<div class="info" id="info-box">';
+                $main_info .= '<ul class="message-list">';
+                // show error
+                foreach ($this->errors as $_error) {
+                    $main_info .= '<li class="error">'.$_error['message'].'</li>';
+                }
+                // show information
+                foreach ($this->infos as $_info) {
+                    $main_info .= '<li class="info">'.$_info['message'].'</li>';
+                }
+                $main_info .= '</ul>';
+                $main_info .= '</div>'."\n";
+            }
+        }
+
         // check load type
         if (!isset($this->views['type']) && $this->views['load_type'] != 'ajax') {
             // load the template
             require TEMPLATES_BASE.$this->config['default_template'].DSEP.'index_template.inc.php';
-            exit(0);
         } else {
             // only output main content
             echo $main_content;
-            exit(0);
         }
+        exit(0);
     }
 
 
@@ -837,16 +882,20 @@ class Simbio {
      * @return  void
      */
     private function parseRequest() {
-        $this->currentRequest = trim(preg_replace('@^.{0,}index\.php@i', '', $_SERVER['REQUEST_URI']));
+        if (stripos($_SERVER['REQUEST_URI'], '/index.php') === false) {
+            return;
+        }
+        $this->currentRequest = trim(preg_replace('@^.*index\.php@i', '', $_SERVER['REQUEST_URI']));
         // explode string by slash
-        $_request = explode('/', $this->currentRequest, 5);
+        $_request = explode('/', $this->currentRequest, 9);
+        unset($_request[0]);
         // main module to load
-        $this->currentModule = isset($_request[0])?trim(str_ireplace('/', '', $_request[0])):$this->config['default_module'];
+        $this->currentModule = isset($_request[1])?trim(str_ireplace('/', '', $_request[1])):$this->config['default_module'];
         // main method to call
-        $this->currentMethod = isset($_request[1])?trim(str_ireplace('/', '', $_request[1])):'index';
+        $this->currentMethod = isset($_request[2])?trim(str_ireplace('/', '', $_request[2])):'index';
         // remaining are method params
         foreach ($_request as $_id => $_request_val) {
-            if ($_id > 1 && isset($_request[$_id])) {
+            if ($_id > 2 && isset($_request[$_id])) {
                 $_request_val = trim(str_ireplace('/', '', $_request_val));
                 $this->currentParam .= $_request_val.'/';
             }

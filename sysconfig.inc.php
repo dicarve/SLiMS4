@@ -69,7 +69,7 @@ $config['app_subtitle'] = 'Open Source Library Management System';
 // Application base dir
 define( 'APP_BASE', realpath(dirname(__FILE__)).DIRECTORY_SEPARATOR );
 // Application web base dir
-$_app_web_base = preg_replace('@modules.*@i', '', dirname($_SERVER['PHP_SELF']));
+$_app_web_base = preg_replace('@(index\.php.*)@i', '', dirname($_SERVER['PHP_SELF']));
 define( 'APP_WEB_BASE', $_app_web_base.(preg_match('@\/$@i', $_app_web_base)?'':'/') );
 // Simbio framework base
 define( 'SIMBIO_BASE', APP_BASE.'simbio3'.DIRECTORY_SEPARATOR );

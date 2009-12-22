@@ -118,10 +118,10 @@ abstract class SimbioModel {
      *
      * @param   object      $obj_framework: Simbio framework object
      * @param   string      $str_args: method main argument
-     * @return  array       an array of status flag and messages
+     * @return  boolean/array       boolean true if validation success OR an array of status flag and messages if validation failed
      */
     public function validate(&$obj_framework) {
-
+        return true;
     }
 }
 ?>
