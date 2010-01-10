@@ -39,7 +39,7 @@
 
 // Array with available translations
 // $locales[] = array('CODE', __('NATIVE NAME'), 'ENGLISH NAME');
-$locales[] = array('de_DE', __('German'), 'Deutsch/German');
 $locales[] = array('en_US', __('English'), 'English');
 $locales[] = array('id_ID', __('Indonesian'), 'Indonesia');
+$locales[] = array('de_DE', __('German'), 'Deutsch/German');
 ?>

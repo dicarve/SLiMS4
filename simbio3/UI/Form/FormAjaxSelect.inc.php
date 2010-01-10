@@ -27,15 +27,15 @@ class FormAJAXSelect extends FormElement
     /**
      * AJAX drop down special properties
      */
-    public $handler_URL = 'about:blank';
-    public $element_dd_list_class = 'ajaxDDlist';
-    public $element_dd_list_default_text = 'SEARCHING...';
-    public $additional_params = '';
+    public $handlerURL = 'about:blank';
+    public $listClass = 'ajaxDDlist';
+    public $defaultText = 'SEARCHING...';
+    public $params = '';
 
     public function out()
     {
-        $_buffer = '<input type="text" id="'.$this->name.'" name="'.$this->name.'" class="'.$this->element_css_class.'" onkeyup="showDropDown(\''.$this->handler_URL.'\', \''.$this->name.'\', \''.$this->additional_params.'\')" value="'.$this->value.'" />';
-        $_buffer .= '<ul class="'.$this->element_dd_list_class.'" id="'.$this->name.'List"><li style="padding: 2px; font-weight: bold;">'.$this->element_dd_list_default_text.'</li></ul>';
+        $_buffer = '<input type="text" id="'.$this->name.'" name="'.$this->name.'" class="'.$this->element_css_class.'" onkeyup="showDropDown(\''.$this->handlerURL.'\', \''.$this->name.'\', \''.$this->params.'\')" value="'.$this->value.'" />';
+        $_buffer .= '<ul class="'.$this->listClass.'" id="'.$this->name.'List"><li style="padding: 2px; font-weight: bold;">'.$this->defaultText.'</li></ul>';
 
         return $_buffer;
     }

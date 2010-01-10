@@ -38,6 +38,12 @@ class FormCheckbox extends FormElement
             }
         }
 
+        // check if required
+        $_required = '';
+        if ($this->required) {
+            $_required = 'required';
+        }
+        
         $_elmnt_num = count($this->options);
         $_row_column = 5;
 
@@ -48,33 +54,37 @@ class FormCheckbox extends FormElement
 
         $_buffer = '';
         if ($_elmnt_num <= $_row_column) {
+            $_c = 0;
             foreach ($this->options as $_cbox) {
                 if (is_array($this->value)) {
-                    $_buffer .= '<div><input type="checkbox" name="'.$this->name.'[]"'
+                    $_buffer .= '<div><input type="checkbox" name="'.$this->name.'[]" id="'.$this->name.$_c.'" '
                         .' value="'.$_cbox[0].'" style="border: 0;" '.(in_array($_cbox[0], $this->value)?'checked':'').$_disabled.' />'
-                        .' '.$_cbox[1]."</div>\n";
+                        .' <label for="'.$this->name.$_c.'">'.$_cbox[1]."</label></div>\n";
                 } else {
-                    $_buffer .= '<div><input type="checkbox" name="'.$this->name.'[]"'
+                    $_buffer .= '<div><input type="checkbox" name="'.$this->name.'[]" id="'.$this->name.$_c.'" '
                         .' value="'.$_cbox[0].'" style="border: 0;" '.(($_cbox[0] == $this->value)?'checked':'').$_disabled.' />'
-                        .' '.$_cbox[1]."</div>\n";
+                        .' <label for="'.$this->name.$_c.'">'.$_cbox[1]."</label></div>\n";
                 }
+                $_c++;
             }
         } else {
             $_column_array = array_chunk($this->options, $_row_column);
             $_buffer = '<table>'."\n";
             $_buffer .= '<tr>'."\n";
             foreach ($_column_array as $_chunked_options) {
+                $_c = 0;
                 $_buffer .= '<td valign="top">'."\n";
                 foreach ($_chunked_options as $_cbox) {
                     if (is_array($this->value)) {
-                        $_buffer .= '<div><input type="checkbox" name="'.$this->name.'[]"'
+                        $_buffer .= '<div><input type="checkbox" name="'.$this->name.'[]" id="'.$this->name.$_c.'" '
                             .' value="'.$_cbox[0].'" style="border: 0;" '.(in_array($_cbox[0], $this->value)?'checked':'').$_disabled.' />'
-                            .' '.$_cbox[1]."</div>\n";
+                            .' <label for="'.$this->name.$_c.'">'.$_cbox[1]."</label></div>\n";
                     } else {
-                        $_buffer .= '<div><input type="checkbox" name="'.$this->name.'[]"'
+                        $_buffer .= '<div><input type="checkbox" name="'.$this->name.'[]" id="'.$this->name.$_c.'" '
                             .' value="'.$_cbox[0].'" style="border: 0;" '.(($_cbox[0] == $this->value)?'checked':'').$_disabled.' />'
-                            .' '.$_cbox[1]."</div>\n";
+                            .' <label for="'.$this->name.$_c.'">'.$_cbox[1]."</label></div>\n";
                     }
+                    $_c++;
                 }
                 $_buffer .= '</td>'."\n";
             }

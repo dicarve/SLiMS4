@@ -23,14 +23,39 @@
 class Biblio extends SimbioModel {
     private $schema = 'aacr2';
 
+
+    /**
+     * Method that must be defined by all child module
+     * used by framework to get module information
+     *
+     * @param   object      $simbio: Simbio framework object
+     * @return  array       an array of module information containing
+     */
+    public function moduleInfo(&$simbio) {
+
+    }
+
+
+    /**
+     * Method that must be defined by all child module
+     * used by framework to get module privileges type
+     *
+     * @param   object      $simbio: Simbio framework object
+     * @return  array       an array of privileges for this module
+     */
+    public function modulePrivileges(&$simbio) {
+
+    }
+
+
     /**
      * Method to add module data
      *
-     * @param   object      $obj_framework: Simbio framework object
+     * @param   object      $simbio: Simbio framework object
      * @param   string      $str_args: method main argument
      * @return  void
      */
-    public function add(&$obj_framework, $str_args) {
+    public function add(&$simbio, $str_args) {
 
     }
 
@@ -38,11 +63,11 @@ class Biblio extends SimbioModel {
     /**
      * Configuration for Biblio module
      *
-     * @param   object      $obj_framework: Simbio framework object
+     * @param   object      $simbio: Simbio framework object
      * @param   string      $str_args: method main argument
      * @return  void
      */
-    public function config(&$obj_framework, $str_args) {
+    public function config(&$simbio, $str_args) {
 
     }
 
@@ -50,11 +75,11 @@ class Biblio extends SimbioModel {
     /**
      * Get detail of bibliographic data
      *
-     * @param   object      $obj_framework: Simbio framework object
+     * @param   object      $simbio: Simbio framework object
      * @param   string      $str_args: an ID of Bibliographic data to fetch
      * @return  void
      */
-    public function detail(&$obj_framework, $str_args) {
+    public function detail(&$simbio, $str_args) {
 
     }
 
@@ -72,15 +97,15 @@ class Biblio extends SimbioModel {
     /**
      * Method to get block content
      *
-     * @param   object      $obj_framework: Simbio framework instance/object
+     * @param   object      $simbio: Simbio framework instance/object
      * @param   string      $str_block_type: string of block type to load
      * @return  string
      */
-    public static function getBlock($obj_framework, $str_block_type) {
+    public static function getBlock($simbio, $str_block_type) {
         $_block;
         switch ($str_block_type) {
             case 'simple search' :
-                $_block = '<form name="simple-search" action="index.php" method="get">
+                $_block = '<form name="simple-search" action="'.APP_WEB_BASE.'index.php/biblio/search" method="get">
                     <input type="text" name="keywords" id="simple-keywords" />
                     <input type="submit" name="search" value="'.__('Search').'" />
                     </form>';
@@ -120,37 +145,58 @@ class Biblio extends SimbioModel {
      * Default module page method
      * All module must have this method
      *
-     * @param   object      $obj_framework: Simbio framework object
+     * @param   object      $simbio: Simbio framework object
      * @param   string      $str_args: method main argument
      * @return  void
      */
-    public function index(&$obj_framework, $str_args) {
-
+    public function index(&$simbio, $str_args) {
+        if (isset($_GET['p']) && stripos($_GET['p'], 'admin', 0) !== false) {
+            // set page title
+            $simbio->setViewConfig('Page Title', __('Bibliography'));
+        } else {
+            // set page title
+            $simbio->setViewConfig('Page Title', __('Online Public Access Catalog'));
+        }
     }
 
 
+
     /**
-     * Module initialization method
-     * All preparation for module such as loading library should be doing here
+     * Method returning an array of application main menu and navigation menu
      *
-     * @param   object      $obj_framework: Simbio framework object
-     * @param   string      $str_args: method main argument
-     * @return  void
+     * @param   object  $simbio: Simbio framework object
+     * @param   string  $str_menu_type: value can be 'main' or 'navigation'
+     * @return  array
      */
-    public function init(&$obj_framework, $str_args) {
-        $obj_framework->addInfo('BIBLIO_INIT', 'Biblio module initialized!');
-        $obj_framework->addError('BIBLIO_INIT_ERROR', 'Error on Biblio module initialization!');
+    public function menu(&$simbio, $str_menu_type = 'navigation') {
+        $_menu = array();
+        if ($str_menu_type == 'main') {
+            $_menu[] = array('link' => 'admin/biblio', 'name' => __('Bibliography'), 'description' => __('Bibliography module used to manage library collections metadata'));
+        } else {
+            $_menu['Catalog'][] = array('link' => 'biblio/add', 'name' => 'Add New Catalog', 'description' => 'Add new catalog record');
+            $_menu['Catalog'][] = array('link' => 'biblio/list', 'name' => 'Catalog List', 'description' => 'List records of existing catalog');
+            $_menu['Catalog'][] = array('link' => 'biblio/z3950', 'name' => 'Z3950 Service', 'description' => 'Z39.50 protocol metadata retrieval');
+            $_menu['Item'][] = array('link' => 'item', 'name' => 'Copies/Items List', 'description' => 'List of copies/items');
+            $_menu['Schema'][] = array('link' => 'biblio/schema', 'name' => 'Bibliographic Schema', 'description' => 'Manage bibliographic data schema');
+            $_menu['Schema'][] = array('link' => 'biblio/schema/add', 'name' => 'Add Schema', 'description' => 'Add new bibliographic data schema');
+            $_menu['Tools'][] = array('link' => 'biblio/config', 'name' => 'Configuration', 'description' => 'Module configuration');
+            $_menu['Tools'][] = array('link' => 'biblio/export', 'name' => 'Export Catalog', 'description' => 'Export catalog records');
+            $_menu['Tools'][] = array('link' => 'item/export', 'name' => 'Export Copies/Items', 'description' => 'Export copies/items records');
+            $_menu['Tools'][] = array('link' => 'biblio/import', 'name' => 'Import Catalog', 'description' => 'Import catalog records');
+            $_menu['Tools'][] = array('link' => 'item/import', 'name' => 'Import Copies/Items', 'description' => 'Import copies/items records');
+        }
+        return $_menu;
     }
 
 
     /**
      * Method to update module data
      *
-     * @param   object      $obj_framework: Simbio framework object
+     * @param   object      $simbio: Simbio framework object
      * @param   string      $str_args: method main argument
      * @return  void
      */
-    public function update(&$obj_framework, $str_args) {
+    public function update(&$simbio, $str_args) {
 
     }
 
@@ -158,11 +204,11 @@ class Biblio extends SimbioModel {
     /**
      * Method to remove module data
      *
-     * @param   object      $obj_framework: Simbio framework object
+     * @param   object      $simbio: Simbio framework object
      * @param   string      $str_args: method main argument
      * @return  void
      */
-    public function remove(&$obj_framework, $str_args) {
+    public function remove(&$simbio, $str_args) {
 
     }
 
@@ -170,11 +216,11 @@ class Biblio extends SimbioModel {
     /**
      * Method to save/update module data
      *
-     * @param   object      $obj_framework: Simbio framework object
+     * @param   object      $simbio: Simbio framework object
      * @param   string      $str_args: method main argument
      * @return  array       an array of status flag and messages
      */
-    public function save(&$obj_framework, $str_args) {
+    public function save(&$simbio, $str_args) {
 
     }
 
@@ -182,11 +228,13 @@ class Biblio extends SimbioModel {
     /**
      * Method to validate processed module data
      *
-     * @param   object      $obj_framework: Simbio framework object
+     * @param   object      $simbio: Simbio framework object
+     * @param   string      $str_current_module: current module called by framework
+     * @param   string      $str_current_method: current method of current module called by framework
      * @param   string      $str_args: method main argument
-     * @return  array/boolean       an array of status flag and messages or boolean true if validation succed
+     * @return  boolean/array       boolean true if validation success OR an array of status flag and messages if validation failed
      */
-    public function validate(&$obj_framework) {
+    public function validate(&$simbio, $str_current_module, $str_current_method, $str_args) {
         return true;
     }
 }

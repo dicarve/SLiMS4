@@ -31,6 +31,12 @@ class FormRadio extends FormElement
             return 'The third argument must be an array';
         }
 
+        // check if required
+        $_required = '';
+        if ($this->required) {
+            $_required = 'required';
+        }
+        
         $_buffer = '';
 
         // number of element in each column
@@ -49,11 +55,13 @@ class FormRadio extends FormElement
             $_buffer .= '<td valign="top">';
             foreach ($_chunk as $_radio) {
                 if ($_radio[0] == $this->value) {
-                    $_buffer .= '<div><input type="radio" name="'.$this->name.'" id="'.$this->name.'"'
+                    $_buffer .= '<div><input type="radio" class="'.( $this->cssClass?$this->cssClass.' '.$_required:$_required ).'"'
+                        .' name="'.$this->name.'" id="'.$this->name.'"'
                         .' value="'.$_radio[0].'" style="border: 0;" checked />'
                         .' <label for="'.$this->name.'">'.$_radio[1]."</label></div>\n";
                 } else {
-                    $_buffer .= '<div><input type="radio" name="'.$this->name.'" id="'.$this->name.'"'
+                    $_buffer .= '<div><input type="radio" class="'.( $this->cssClass?$this->cssClass.' '.$_required:$_required ).'"'
+                        .' name="'.$this->name.'" id="'.$this->name.'"'
                         .' value="'.$_radio[0].'" style="border: 0;" />'
                         .' <label for="'.$this->name.'">'.$_radio[1]."</label></div>\n";
                 }

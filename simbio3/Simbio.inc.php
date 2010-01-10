@@ -28,14 +28,14 @@ class Simbio {
     // main database connection object
     private $dbc = null;
     // last query
-    private $last_query = null;
+    private $lastQuery = null;
     // an array of global application configuration
     private $config = array();
     // module related properties
     private $currentRequest;
     private $currentModule = 'biblio';
     private $currentMethod = 'index';
-    private $currentParam = 0;
+    private $currentParam = '';
     private $enabledModules = array();
     // a registry for already loaded modules or libraries
     private $loadedModules = array();
@@ -45,18 +45,26 @@ class Simbio {
     private $locales = array();
     // views registry
     private $views = array();
+    // views configuration
+    private $viewsConfig = array();
     // javascript files
     private $javascripts = array();
     // css files
     private $css = array();
     // errors
     private $errors = array();
+    // info
+    private $infos = array();
     // main menu
-    private $main_menu = array();
+    private $mainMenu = array();
     // navigation menu
-    private $navigation_menu = array();
+    private $navigationMenu = array();
     // page metadata
     private $metadata = array();
+    // header box
+    public $headerBlockTitle = '';
+    public $headerBlockMenu = array();
+    public $headerBlockForm = null;
 
     /**
      * Simbio framework class constructor set to private to prevent instance creation
@@ -137,8 +145,8 @@ class Simbio {
     /**
      * Method to add page Metadata
      *
-     * @param   string  $str_metadata_name : a metadata field name
-     * @param   string  $str_content : a metadata field value
+     * @param   string  $str_metadata_name: a metadata field name
+     * @param   string  $str_content: a metadata field value
      * @return  void
      */
     public function addMetadata($str_metadata_name, $str_content) {
@@ -147,6 +155,29 @@ class Simbio {
         } else {
             $this->metadata[$str_metadata_name] = $str_content;
         }
+    }
+
+
+    /**
+     * Method to add main menu item
+     *
+     * @param   array   $arr_menu_item: menu item array
+     * @return  void
+     */
+    public function addMainMenu($arr_menu_item) {
+        $this->mainMenu[] = $arr_menu_item;
+    }
+
+
+    /**
+     * Method to add navigation menu item
+     *
+     * @param   string  $str_section: navigation menu section to add
+     * @param   array   $arr_menu_item: menu item array
+     * @return  void
+     */
+    public function addNavigationMenu($str_section, $arr_menu_item) {
+        $this->navigationMenu[$str_section][] = $arr_menu_item;
     }
 
 
@@ -209,22 +240,25 @@ class Simbio {
             // make a new connection object that will be used by all applications
             $this->dbc = @new Mysql($_uri['host'], $_uri['user'], $_uri['pass'], $_dbname, $_dbport);
         }
+        // Force UTF-8 for MySQL connection and HTTP header
+        header('Content-type: text/html; charset=UTF-8');
+        $this->dbc->query('SET NAMES \'utf8\'');
     }
 
 
     /**
      * Method easily update data of database table records
      *
-     * @param   array   $arr_criteria : an array of table information and SQL criteria
+     * @param   string  $str_criteria : string of SQL criteria
      * @return  array   an array of operation status flag and message
      */
-    public function dbDelete($arr_criteria, $str_table) {
+    public function dbDelete($str_criteria, $str_table) {
         // the delete query
-        $this->last_query = "DELETE FROM $str_table WHERE $str_criteria";
-        $_delete = $this->dbc->query($this->last_query);
+        $_q = "DELETE FROM {".$str_table."} WHERE $str_criteria";
+        $_delete = $this->dbQuery($_q);
         // if an error occur
-        if ($this->dbc->error) {
-            $this->addError('DB_DELETE_FAILED', 'Error deleting data from table '.$str_table.' with query: '.$this->last_query);
+        if ($this->dbc->errno) {
+            $this->addError('DB_DELETE_FAILED', 'Error deleting data from table '.$str_table.' with query: '.$this->lastQuery);
             return false;
         }
 
@@ -251,7 +285,7 @@ class Simbio {
             // concatenating column name
             $_str_columns .= ", `$column`";
             // concatenating value
-            if ($value === 'NULL' OR $value === null) {
+            if ($value == 'NULL' || $value === null) {
                 // if the value is NULL or string NULL
                 $_str_value .= ', NULL';
             } else if (is_string($value)) {
@@ -273,12 +307,12 @@ class Simbio {
         $_str_value = substr_replace($_str_value, '', 0, 1);
 
         // the insert query
-        $this->last_query = "INSERT INTO $str_table ($_str_columns) "
-            ."VALUES ($_str_value)";
-        $_insert = $this->dbc->query($this->last_query);
+        $_q = "INSERT INTO {".$str_table."} ($_str_columns) VALUES ($_str_value)";
+        $_insert = $this->dbQuery($_q);
         // if an error occur
-        if ($this->dbc->error) {
-            $this->addError('DB_INSERT_FAILED', 'Error inserting data to table '.$str_table.' with query: '.$this->last_query);
+        if ($this->dbc->errno) {
+            $this->addError('DB_INSERT_FAILED', 'Error inserting data to table '.$str_table.' with query: '.$this->lastQuery.'. MySQL server said: '.$this->dbc->error);
+            return false;
         }
 
         return true;
@@ -322,14 +356,25 @@ class Simbio {
         }
 
         // update query
-        $this->last_query = "UPDATE $str_table SET $_set WHERE $str_criteria";
-        $_update = $this->dbc->query($this->last_query);
+        $_q = "UPDATE {".$str_table."} SET $_set WHERE $str_criteria";
+        $_update = $this->dbQuery($_q);
         // if an error occur
-        if ($this->dbc->error) {
-            $this->addError('DB_UPDATE_FAILED', 'Error updating data of table '.$str_table.' with query: '.$this->last_query);
+        if ($this->dbc->errno) {
+            $this->addError('DB_UPDATE_FAILED', 'Error updating data of table '.$str_table.' with query: '.$this->lastQuery);
+            return false;
         }
 
         return true;
+    }
+
+
+    /**
+     * Get last error information of last database query
+     *
+     * @return  array   an array of database error information
+     */
+    public function dbError() {
+        return array('errno' => $this->dbc->errno, 'error' => $this->dbc->error);
     }
 
 
@@ -340,15 +385,46 @@ class Simbio {
      * @return  object  mysql statement object
      */
     public function dbQuery($str_query) {
-        return $this->dbc->query(Simbio::rewriteQuery($str_query));
+        $this->lastQuery = Simbio::rewriteQuery($str_query, $this->config['db_prefix']);
+        return $this->dbc->query($this->lastQuery);
+    }
+
+
+    /**
+     * Filterize SQL string
+     *
+     * @param   string  $str_sql_data: SQL value to be filterize
+     * @param   boolean $bool_strip_html: wether to strip HTML tags or not
+     * @return  string  filterized string
+     */
+    public function filterizeSQLString($str_sql_data, $bool_strip_html = false) {
+        $_data = $this->dbc->escape_string(trim($str_sql_data));
+        $_data = $bool_strip_html?strip_tags($_data):$_data;
+        return $_data;
     }
 
 
     /**
      * Method to generate view data
      */
-    public function generateView() {
-
+    private function generateView() {
+        $_view_output = '';
+        foreach ($this->views as $_vid => $_view) {
+            if (is_string($_view)) {
+                $_view_output .= $_view;
+            } else if ($_view instanceof FormOutput) {
+                $_view_output .= $_view->build();
+            } else if ($_view instanceof Datagrid) {
+                $_view_output .= $_view->build();
+            } else if ($_view instanceof Listing) {
+                $_view_output .= $_view->build();
+            } else if ($_view instanceof Table) {
+                $_view_output .= $_view->printTable();
+            } else {
+                $_view_output .= (string)$_view;
+            }
+        }
+        return $_view_output;
     }
 
 
@@ -379,6 +455,16 @@ class Simbio {
 
 
     /**
+     * Method to get database connection object
+     *
+     * @return  object  database connection object created by framework
+     */
+    public function getDBC() {
+        return $this->dbc;
+    }
+
+
+    /**
      * Method to get global application config
      *
      * @return  array   an array of global config variables
@@ -389,14 +475,48 @@ class Simbio {
 
 
     /**
+     * Generate header block containing menu and quick search
+     *
+     * @param   string  $str_block_name: name of block
+     * @param   string  $str_block_title: title of block
+     * @return  string
+     */
+    private function headerBlock() {
+        if ($this->headerBlockMenu || $this->headerBlockForm) {
+            $str_block_name = strtolower(str_replace(' ', '-', $this->headerBlockTitle));
+
+            $_block = '';
+            // menu
+            if ($this->headerBlockMenu) {
+                $_block .= '<div class="header-menu">';
+                foreach ($this->headerBlockMenu as $_menu) {
+                    $_block .= '<a href="index.php?p='.$_menu['link'].'"'.( isset($_menu['class'])?' class="'.$_menu['class'].'"':'' ).' title="'.$_menu['desc'].'">'.$_menu['title'].'</a>';
+                }
+                $_block .= '</div>';
+            }
+            // quick search
+            if ($this->headerBlockForm instanceof FormOutput) {
+                $_block .= $this->headerBlockForm->buildSimple();
+            }
+
+            return '<div class="header-block" id="'.$str_block_name.'">'.Utility::createBlock($_block, $this->headerBlockTitle).'</div>'."\n";
+        }
+        return '';
+    }
+
+
+    /**
      * Method to get current framework views data
      *
      * @param   string      $str_view_id: an ID of view data to get
-     * @return  string
+     * @return  mixed
      */
     public function getViews($str_view_id = null) {
         if ($str_view_id) {
-            return $this->views['content'][$str_view_id];
+            if (isset($this->views[$str_view_id])) {
+                return $this->views[$str_view_id];
+            }
+            return '';
         } else {
             return $this->views;
         }
@@ -414,12 +534,18 @@ class Simbio {
 
 
     /**
-     * Method to get current view data
+     * Method to get all module objects
      *
-     * @return  array   an array of view data
+     * @param   object  $obj_module_vars: a reference variable which will contain module objects
+     * @param   string  $str_module_name: module name to get
+     * @return  void
      */
-    public function getView() {
-        return $this->views;
+    public function getModules($str_module_name = null) {
+        if ($str_module_name) {
+            return $this->modules[$str_module_name];
+        } else {
+            return $this->modules;
+        }
     }
 
 
@@ -430,6 +556,8 @@ class Simbio {
      * @return  void
      */
     private function init($arr_config) {
+        // set error handler
+        set_error_handler(array($this, 'phpErrorHandler'));
         // re-define DIRECTORY_SEPARATOR constant to make it shorter
         define( 'DSEP', DIRECTORY_SEPARATOR );
         // initialization
@@ -445,6 +573,10 @@ class Simbio {
         // application base dir
         if (!defined('APP_BASE')) {
             define( 'APP_BASE', SIMBIO_BASE );
+        }
+        // application base dir
+        if (!defined('APP_VERSION')) {
+            define( 'APP_VERSION', Simbio::SIMBIO_VERSION );
         }
         // application web base dir
         if (!defined('APP_WEB_BASE')) {
@@ -474,6 +606,10 @@ class Simbio {
         if (!defined('LIBS_WEB_BASE')) {
             define( 'LIBS_WEB_BASE', APP_WEB_BASE.'libraries/' );
         }
+        // session cookie name
+        if (!defined('APP_SESSION_COOKIE_NAME')) {
+            define( 'APP_SESSION_COOKIE_NAME', 'simbio' );
+        }
 
         /**
          * Default configurations
@@ -485,10 +621,12 @@ class Simbio {
         $this->config['default_template'] = 'default';
         $this->config['default_admin_template'] = 'default';
         $this->config['locale'] = 'en_US';
-        $this->config['show_error'] = true;
+        $this->config['show_error'] = false;
 
         // merge config from external configuration
         $this->config = array_merge($this->config, $arr_config);
+
+        $this->viewsConfig['load_type'] = 'full';
         // turn off/on all errors
         @ini_set('display_errors', $this->config['show_error']);
         // check magic quote gpc
@@ -534,7 +672,7 @@ class Simbio {
      * @return  array   an array of global configuration
      */
     private function loadGlobalConfig() {
-        $_config_q = $this->dbc->query(Simbio::rewriteQuery('SELECT config_name,config_value FROM {config} LIMIT 200', $this->config['db_prefix']));
+        $_config_q = $this->dbc->query(Simbio::rewriteQuery('SELECT config_name,config_value FROM {config} WHERE (config_scope IS NULL OR config_scope=\'GLOBAL\') LIMIT 200', $this->config['db_prefix']));
         $_configs = array();
         while ($_config_d = $_config_q->fetch_row()) {
             if (in_array($_config_d[0], array('default_module', 'db_uri', 'db_prefix', 'show_error'))) {
@@ -560,10 +698,8 @@ class Simbio {
                 if ($str_path) {
                     $_lib_path = $str_path;
                 }
-                if (file_exists($_lib_path)) {
-                    require $_lib_path;
-                    $this->loadedLibraries[$str_library_name] = $_lib_path;
-                }
+                require $_lib_path;
+                $this->loadedLibraries[$str_library_name] = $_lib_path;
             }
         }
     }
@@ -597,10 +733,8 @@ class Simbio {
                 if ($str_path) {
                     $_module_path = $str_path;
                 }
-                if (file_exists($_module_path)) {
-                    require $_module_path;
-                    $this->loadedModules[$str_module_name] = $_module_path;
-                }
+                require $_module_path;
+                $this->loadedModules[$str_module_name] = $_module_path;
             }
         }
     }
@@ -611,6 +745,7 @@ class Simbio {
      *
      * @param   mixed   $mixed_view_data: a view data to add
      * @param   string  $str_view_id: id of view data
+     * @return  void
      */
     public function loadView($mixed_view_data, $str_view_id) {
         $this->views[$str_view_id] = $mixed_view_data;
@@ -672,6 +807,17 @@ class Simbio {
      * this is the main framework action
      */
     public function main() {
+        // set session parameters
+        // always use session cookies
+        @ini_set('session.use_cookies', true);
+        // use more secure session ids
+        @ini_set('session.hash_function', 1);
+        // some pages (e.g. stylesheet) may be cached on clients, but not in shared proxy servers
+        @session_cache_limiter('private');
+        // set session name and start the session
+        @session_name(APP_SESSION_COOKIE_NAME);
+        // set session cookies params
+        @session_set_cookie_params(86400, APP_WEB_BASE);
         // start session
         session_start();
         // parse module request and router
@@ -685,10 +831,15 @@ class Simbio {
             $this->addError('NO_PRIVILEGES', __('You don\'t have enough privileges to enter this section!'));
             $this->makeFinalOutput();
         }
-        // load Simbio Module Skeleton libraries so other other modules can inherit it
+        // load Simbio Model libraries so other modules can inherit it
         $this->loadLibrary('SimbioModel', SIMBIO_BASE.'SimbioModel.inc.php');
         // load enabled libraries so it is available for all loaded module
         $this->loadLibrary('Utility', SIMBIO_BASE.'Utils'.DSEP.'Utility.inc.php');
+        $this->loadLibrary('SQLgrid', SIMBIO_BASE.'Databases'.DSEP.'SQLgrid.inc.php');
+        $this->loadLibrary('Listing', SIMBIO_BASE.'UI'.DSEP.'Listing.inc.php');
+        $this->loadLibrary('Table', SIMBIO_BASE.'UI'.DSEP.'Table'.DSEP.'Table.inc.php');
+        $this->loadLibrary('FormOutput', SIMBIO_BASE.'UI'.DSEP.'Form'.DSEP.'FormOutput.inc.php');
+        $this->loadLibrary('Paging', SIMBIO_BASE.'UI'.DSEP.'Paging.inc.php');
         // load enabled modules
         foreach ($this->enabledModules as $_name => $_module) {
             $this->loadModule($_name);
@@ -698,32 +849,48 @@ class Simbio {
         $this->javascripts[] = SIMBIO_WEB_BASE.'UI/Javascripts/jquery.js';
         $this->javascripts[] = SIMBIO_WEB_BASE.'UI/Javascripts/ajax.js';
         $this->javascripts[] = SIMBIO_WEB_BASE.'UI/Javascripts/gui.js';
+        $this->javascripts[] = SIMBIO_WEB_BASE.'UI/Javascripts/jquery.textarearesizer.js';
+        $this->javascripts[] = SIMBIO_WEB_BASE.'UI/Javascripts/jquery.date_input.js';
         // load Simbio's default CSS libraries
         $this->css[] = SIMBIO_WEB_BASE.'UI/CSS/core.style.css';
+        $this->css[] = SIMBIO_WEB_BASE.'UI/Javascripts/date_input.css';
+        $this->css[] = SIMBIO_WEB_BASE.'UI/Javascripts/textarearesizer.css';
 
         // create instance of all enabled module
         foreach ($this->enabledModules as $_module_name => $_module) {
-            $_module_name = strtolower($_module_name);
-            $this->modules[strtolower($_module_name)] = new $_module_name();
+            $_module_name = trim(strtolower($_module_name));
+            $this->modules[$_module_name] = new $_module_name($this);
+        }
+
+        // run module init method
+        foreach ($this->modules as $_module_obj) {
             // call initialization method for each module
-            $this->modules[$_module_name]->init($this, $this->currentParam);
+            $_module_obj->init($this, $this->currentModule, $this->currentMethod, $this->currentParam);
         }
 
         // run module validate method
         foreach ($this->modules as $_module_obj) {
-            $_validated = $_module_obj->validate($this);
+            $_validated = $_module_obj->validate($this, $this->currentModule, $this->currentMethod, $this->currentParam);
             if ($_validated !== true) {
                 $this->addError($_validated['error_code'], $_validated['error_message']);
+                $this->makeFinalOutput();
             }
         }
 
         // run current module method
         $_cmodule = trim(strtolower($this->currentModule));
         $_cmethod = trim($this->currentMethod);
-        if ($_cmodule) {
-            if (method_exists($this->modules[$_cmodule], $_cmethod)) {
+        if (isset($this->modules[$_cmodule])) {
+            if (method_exists($this->modules[$_cmodule], 'reRoute')) {
+                $this->modules[$_cmodule]->reRoute($this, $_cmethod, $this->currentParam);
+            } else if (method_exists($this->modules[$_cmodule], $_cmethod)) {
                 $this->modules[$_cmodule]->$_cmethod($this, $this->currentParam);
             }
+        }
+
+        // run module manipulate method
+        foreach ($this->modules as $_module_obj) {
+            $_module_obj->manipulate($this, $this->currentModule, $this->currentMethod, $this->currentParam);
         }
 
         // make the final output
@@ -752,36 +919,38 @@ class Simbio {
         // read text direction
         $text_direction = 'ltr';
         // page title
-        $page_title = $this->config['app_title'];
+        $page_title = $this->config['app_title'].( isset($this->viewsConfig['Page Title'])?' - '.$this->viewsConfig['Page Title']:'' );
         // page charset
         $page_charset = 'utf-8';
         // shortcut icon
         $webicon = 'webicon.png';
         // logo
         $_logo = isset($this->config['logo'])?isset($this->config['logo']):TEMPLATES_WEB_BASE.$this->config['default_template'].'/logo.png';
-        $app_logo = '<a href="index.php" id="logo-link"><img src="'.$_logo.'" border="0" id="logo-link" /></a>';
+        $app_logo = '<a href="'.APP_WEB_BASE.'" id="logo-link"><img src="'.$_logo.'" border="0" id="logo" /></a>';
         // application main title
-        $app_title = '<a href="index.php" id="app-title-link">'.$this->config['app_title'].'</a>';
+        $app_title = '<a href="'.APP_WEB_BASE.'" id="app-title-link"><span>'.$this->config['app_title'].'</span></a>';
         // application subtitle
         $app_subtitle = $this->config['app_subtitle'];
         // main application information box
         $main_info = '';
         // main content
-        $main_content = '';
+        $main_content = $this->headerBlock();
         // main menu links
         $primary_links = '';
         // navigation links
         $navigation_links = '';
+        // closure
+        $closure = isset($this->views['CLOSURE'])?$this->views['CLOSURE']:'';
 
         // load template config file
         $_tconf = $this->loadTemplateConfig();
         if ($_tconf) {
-            if (isset($_tconf['css']) && $_tconf['css']) {
+            if (isset($_tconf['css']['cssfile']) && $_tconf['css']) {
                 foreach($_tconf['css']['cssfile'] as $_cssfile) {
                     $this->css[] = TEMPLATES_WEB_BASE.$this->config['default_template'].'/'.$_cssfile;
                 }
             }
-            if (isset($_tconf['js']) && $_tconf['js']) {
+            if (isset($_tconf['js']['jsfile']) && $_tconf['js']) {
                 foreach($_tconf['js']['jsfile'] as $_jsfile) {
                     $this->javascripts[] = TEMPLATES_WEB_BASE.$this->config['default_template'].'/'.$_jsfile;
                 }
@@ -794,15 +963,11 @@ class Simbio {
             }
         }
 
-        // load CSS and javascript links
-        $css = $this->loadCSS();
-        $javascripts = $this->loadJS();
-        $metadata = $this->loadMetadata();
 
         // check content type
         // set header
-        if (isset($this->views['content_type'])) {
-            header('Content-type: '.$this->views['content_type']);
+        if (isset($this->viewsConfig['content_type'])) {
+            header('Content-type: '.$this->viewsConfig['content_type']);
         } else {
             header('Content-type: text/html');
             // show all error and infofmation
@@ -810,25 +975,102 @@ class Simbio {
                 $main_info = '<div class="info" id="info-box">';
                 $main_info .= '<ul class="message-list">';
                 // show error
-                foreach ($this->errors as $_error) {
-                    $main_info .= '<li class="error">'.$_error['message'].'</li>';
+                if ($this->errors) {
+                    foreach ($this->errors as $_error) {
+                        $main_info .= '<li class="error">'.$_error['message'].'</li>';
+                    }
                 }
                 // show information
-                foreach ($this->infos as $_info) {
-                    $main_info .= '<li class="info">'.$_info['message'].'</li>';
+                if ($this->infos) {
+                    foreach ($this->infos as $_info) {
+                        $main_info .= '<li class="info">'.$_info['message'].'</li>';
+                    }
                 }
                 $main_info .= '</ul>';
                 $main_info .= '</div>'."\n";
             }
         }
 
+        // load type change when requested with AJAX
+        if (isset($_SERVER["HTTP_X_REQUESTED_WITH"])) {
+            if ($_SERVER["HTTP_X_REQUESTED_WITH"] == 'XMLHttpRequest') {
+                $this->viewsConfig['load_type'] = 'notemplate';
+            }
+        }
+
         // check load type
-        if (!isset($this->views['type']) && $this->views['load_type'] != 'ajax') {
+        if ($this->viewsConfig['load_type'] != 'notemplate') {
+            $_template = $this->config['default_template'];
+            $_template_file = 'index_template.inc.php';
+            if (strtolower($this->currentModule) == 'admin') {
+                $_template = $this->config['admin_template'];
+                // set admin template file
+                if (isset($_tconf['admin']['template'])) {
+                    $_template_file = 'admin_template.inc.php';
+                }
+                if (isset($_tconf['admin']['cssfile'])) {
+                    foreach($_tconf['admin']['cssfile'] as $_admin_cssfile) {
+                        $this->css[] = TEMPLATES_WEB_BASE.$_template.'/'.$_admin_cssfile;
+                    }
+                }
+                if (isset($_tconf['admin']['jsfile'])) {
+                    foreach($_tconf['admin']['jsfile'] as $_admin_jsfile) {
+                        $this->javascripts[] = TEMPLATES_WEB_BASE.$_template.'/'.$_admin_jsfile;
+                    }
+                }
+            }
+
+            // load CSS and javascript links
+            $css = $this->loadCSS();
+            $javascripts = $this->loadJS();
+            $metadata = $this->loadMetadata();
+            $main_content .= $this->generateView();
+
+            // generate main menu
+            $primary_links = '<ul id="primary-links">'."\n";
+            // add admin homepage link at the beginning of array menu
+            array_unshift($this->mainMenu, array('link' => 'admin', 'description' => 'Administration homepage', 'name' => 'Admin home'));
+            // add logout link at end
+            $this->mainMenu[] = array('link' => 'user/logout', 'description' => 'Quit safely from application', 'name' => 'LOGOUT');
+            if ($this->mainMenu) {
+                foreach ($this->mainMenu as $_menu) {
+                    $_menu_class = str_replace(array(' '), '-', strtolower($_menu['name']));
+                    if (stripos($this->currentRequest, $_menu['link'], 0) !== false && $_menu['link'] != 'admin') {
+                        $_menu_class .= ' active';
+                    } else if ($_menu['link'] == 'admin' && $this->currentRequest == 'admin') {
+                        $_menu_class .= ' active';
+                    }
+                    $primary_links .= '<li><a'.( isset($_menu['class'])?' class="'.$_menu_class.' '.$_menu['class'].'"':' class="'.$_menu_class.'"' ).' href="index.php?p='.$_menu['link'].'" title="'.__($_menu['description']).'"><span>'.__($_menu['name']).'</a></span></li>';
+                }
+            }
+            $primary_links .= '</ul>'."\n";
+
+            // generate navigation menu
+            if ($this->navigationMenu) {
+                $navigation_links = '<div id="navigation-block">'."\n";
+                foreach ($this->navigationMenu as $_nav_section => $_nav_menus) {
+                    $navigation_links .= '<div class="navigation-section-title">'.__($_nav_section).'</div>'."\n";
+                    $navigation_links .= '<ul class="navigation-list">'."\n";
+                    foreach ($_nav_menus as $_nav_menu) {
+                        $navigation_links .= '<li><a'.( isset($_menu['class'])?' class="navigation '.$_menu['class'].'"':' class="navigation"' ).' href="index.php?p='.$_nav_menu['link'].'" title="'.__($_nav_menu['description']).'"><span>'.__($_nav_menu['name']).'</span></a></li>';
+                    }
+                    $navigation_links .= '</ul>'."\n";
+                }
+                $navigation_links .= '</div>'."\n";
+            }
+
             // load the template
-            require TEMPLATES_BASE.$this->config['default_template'].DSEP.'index_template.inc.php';
+            require TEMPLATES_BASE.$_template.DSEP.$_template_file;
         } else {
+            // load CSS and javascript links
+            $css = $this->loadCSS();
+            $javascripts = $this->loadJS();
+            $main_content .= $this->generateView();
+
+            echo $main_info;
             // only output main content
             echo $main_content;
+            echo $closure;
         }
         exit(0);
     }
@@ -877,31 +1119,59 @@ class Simbio {
 
 
     /**
+     * Method to set main view configuration
+     *
+     * @param   string  $str_view_config_ID: id of config
+     * @param   string  $str_view_config_value: view config data
+     * @return  void
+     */
+    public function setViewConfig($str_view_config_ID, $str_view_config_value) {
+        $this->viewsConfig[$str_view_config_ID] = $str_view_config_value;
+    }
+
+
+    /**
      * Method to parse module request
      *
      * @return  void
      */
     private function parseRequest() {
-        if (stripos($_SERVER['REQUEST_URI'], '/index.php') === false) {
-            return;
-        }
-        $this->currentRequest = trim(preg_replace('@^.*index\.php@i', '', $_SERVER['REQUEST_URI']));
+        $this->currentRequest = !isset($_GET['p'])?$this->config['default_module'].'/index':$_GET['p'];
         // explode string by slash
         $_request = explode('/', $this->currentRequest, 9);
-        unset($_request[0]);
         // main module to load
-        $this->currentModule = isset($_request[1])?trim(str_ireplace('/', '', $_request[1])):$this->config['default_module'];
+        $this->currentModule = isset($_request[0])?trim(str_ireplace('/', '', $_request[0])):$this->config['default_module'];
         // main method to call
-        $this->currentMethod = isset($_request[2])?trim(str_ireplace('/', '', $_request[2])):'index';
+        $this->currentMethod = isset($_request[1])?trim(str_ireplace('/', '', $_request[1])):'index';
+        // check current method and reroute to index if the method is restricted
+        $_restricted_method = array('init', 'validate', 'manipulate', 'reroute');
+        if (in_array($this->currentMethod, $_restricted_method)) {
+            $this->currentMethod = 'index';
+        }
         // remaining are method params
         foreach ($_request as $_id => $_request_val) {
-            if ($_id > 2 && isset($_request[$_id])) {
-                $_request_val = trim(str_ireplace('/', '', $_request_val));
+            if ($_id > 1 && isset($_request[$_id])) {
+                $_request_val = trim(str_replace('/', '', $_request_val));
                 $this->currentParam .= $_request_val.'/';
             }
         }
         // strip the last slash of param
         $this->currentParam = preg_replace('@\/$@i', '', $this->currentParam);
+    }
+
+
+    /**
+     * Callback method for php error handling
+     *
+     * @param   integer $errno
+     * @param   string  $errstr
+     * @param   string  $errfile
+     * @param   integer $errline
+     * @return  boolean
+     */
+    public function phpErrorHandler($errno, $errstr, $errfile, $errline) {
+        $this->errors[$errno] = array('code' => $errno, 'message' => $errstr.' at '.$errfile.' on line '.$errline);
+        return true;
     }
 
 
@@ -930,10 +1200,10 @@ class Simbio {
     /**
      * Method to write application activity logs
      *
-     * @param       string      $str_module_name = name of module
-     * @param       string      $str_log_msg = log messages
-     * @param       integer     $int_operation_constant = simbio operation constant
-     * @return      void
+     * @param   string  $str_module_name = name of module
+     * @param   string  $str_log_msg = log messages
+     * @param   integer $int_operation_constant = simbio operation constant
+     * @return  void
      */
     public function writeLogs($str_module_name, $str_log_msg, $int_operation_constant = 0)
     {
@@ -942,7 +1212,7 @@ class Simbio {
         $_str_sql .= ' VALUES ';
         $_str_sql .= '('.$int_operation_constant.', \''.trim(strtolower($str_module_name)).'\',';
         $_str_sql .= $_SESSION['userID'].', \''.trim(strip_tags(strtolower($str_log_msg))).'\')';
-        $this->dbc->query(self::rewriteQuery($_str_sql));
+        $this->dbQuery($_str_sql);
     }
 }
 ?>

@@ -1,5 +1,6 @@
 <?php
 /**
+ * SENAYAN Library Management System 4 (SLiMS4)
  * SLiMS4 application global file configuration
  *
  * Copyright (C) 2009,2010  Arie Nugraha (dicarve@yahoo.com)
@@ -51,6 +52,11 @@ $config['default_module'] = 'Biblio';
 $config['default_template'] = 'default';
 
 /**
+ * Admin template
+ */
+$config['admin_template'] = 'default';
+
+/**
  * Application title
  */
 $config['app_title'] = 'SLiMS';
@@ -61,6 +67,16 @@ $config['app_title'] = 'SLiMS';
 $config['app_subtitle'] = 'Open Source Library Management System';
 
 /**
+ * Copyright info
+ */
+$config['copyright_info'] = 'SLiMS (SENAYAN Library Management System) is licensed under GNU GPL Version 3. <a href="http://senayan.diknas.go.id">SLiMS Official Website</a>';
+
+/**
+ * Mysqldump settings
+ */
+$config['mysqldump'] = '/usr/local/bin/mysqldump';
+
+/**
  * Application wide constants
  *
  * You better don't change below constants especially APP_BASE and SIMBIO_BASE constants
@@ -68,12 +84,15 @@ $config['app_subtitle'] = 'Open Source Library Management System';
  */
 // Application base dir
 define( 'APP_BASE', realpath(dirname(__FILE__)).DIRECTORY_SEPARATOR );
+// SLiMS version
+define( 'APP_VERSION', 'SLiMS 4.0');
+// Application session cookie name
+define( 'APP_SESSION_COOKIE_NAME', 'slims4' );
 // Application web base dir
-$_app_web_base = preg_replace('@(index\.php.*)@i', '', dirname($_SERVER['PHP_SELF']));
+$_app_web_base = preg_replace('@modules.+@i', '', dirname($_SERVER['PHP_SELF']));
 define( 'APP_WEB_BASE', $_app_web_base.(preg_match('@\/$@i', $_app_web_base)?'':'/') );
 // Simbio framework base
 define( 'SIMBIO_BASE', APP_BASE.'simbio3'.DIRECTORY_SEPARATOR );
 // Simbio framework web base
 define( 'SIMBIO_WEB_BASE', APP_WEB_BASE.'simbio3/' );
-
 ?>

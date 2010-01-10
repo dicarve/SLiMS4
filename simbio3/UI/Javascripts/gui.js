@@ -20,7 +20,7 @@
 jQuery.fn.simbioTable = function(params) {
     // set some options
     options = {
-        mouseoverCol: '#bcd4ec',
+        mouseoverCol: '#6dff77',
         highlightCol: 'yellow'
     };
     jQuery.extend(options, params);
@@ -90,27 +90,6 @@ jQuery.fn.simbioTable = function(params) {
 
 
 /**
- * Add some utilities function to jQuery namespace
- */
-jQuery.extend({
-    unCheckAll: function(strSelector) {
-        jQuery(strSelector).find('tr').each(function() {
-            if ($(this).hasClass('highlighted')) {
-                $(this).trigger('click');
-            }
-        });
-    },
-    checkAll: function(strSelector) {
-        jQuery(strSelector).find('tr').each(function() {
-            if (!$(this).hasClass('highlighted')) {
-                $(this).trigger('click');
-            }
-        });
-    }
-});
-
-
-/**
  * jQuery Plugins function to make dynamic addition form field
  *
  *
@@ -138,19 +117,53 @@ jQuery.fn.dynamicField = function() {
     return jQuery(this);
 }
 
+
 /**
- * automatic set for all table with class : datagrid
+ * jQuery plugins to disable all input field inside form
+ *
+ *
+ * @return      jQuery
  */
-$(document).ready(function() {
-    if (jQuery('.datagrid').length > 0) {
-        jQuery('.datagrid').simbioTable();
-        // register uncheck click event
-        jQuery('.uncheck-all').click(function() {
-            jQuery.unCheckAll('.datagrid');
+jQuery.fn.disableForm = function() {
+    var disabledForm = jQuery(this);
+    disabledForm.find('input,select,textarea').each(function(i) {
+        this.disabled = true;
+    });
+    return disabledForm;
+}
+
+
+/**
+ * jQuery plugins to enable all input field inside form
+ *
+ *
+ * @return      jQuery
+ */
+jQuery.fn.enableForm = function() {
+    var enabledForm = jQuery(this);
+    enabledForm.find('input,select,textarea').each(function(i) {
+        this.disabled = false;
+    });
+    return enabledForm;
+}
+
+
+/**
+ * Add some utilities function to jQuery namespace
+ */
+jQuery.extend({
+    unCheckAll: function(strSelector) {
+        jQuery(strSelector).find('tr').each(function() {
+            if ($(this).hasClass('highlighted')) {
+                $(this).trigger('click');
+            }
         });
-        // register check click event
-        jQuery('.check-all').click(function() {
-            jQuery.checkAll('.datagrid');
+    },
+    checkAll: function(strSelector) {
+        jQuery(strSelector).find('tr').each(function() {
+            if (!$(this).hasClass('highlighted')) {
+                $(this).trigger('click');
+            }
         });
     }
 });

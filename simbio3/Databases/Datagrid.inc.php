@@ -21,28 +21,27 @@
  *
  */
 
-require 'SQLgrid.inc.php';
-
 class Datagrid extends SQLgrid
 {
     private $actionURI = 'index.php';
     private $actionOptions = array();
+    private $table = '';
     protected $rowActions = array();
     protected $rowActionsHeader = array();
+    public $withPaging = true;
 
     /**
      * Class constructor
      *
-     * @param   object  $obj_db : Simbio framework connection object
+     * @param   object  $obj_db: Simbio framework connection object
+     * @param   string  $str_grid_name: name of datagrid
      * @return  void
      */
-    public function __construct($obj_db)
+    public function __construct($obj_db, $str_grid_name = 'datagrid')
     {
         parent::__construct($obj_db);
-        // check primary keys
-        if (!$this->primaryKeys) {
-            $this->primaryKeys = array(0);
-        }
+        // create table object
+        $this->table = new Table();
     }
 
 
@@ -75,8 +74,12 @@ class Datagrid extends SQLgrid
      *
      * @return  string
      */
-    protected function output()
+    public function build()
     {
+        if ($this->num_rows < 1) {
+            return $this->table->printTable();
+        }
+
         // remove hidden fields if any
         $this->removeHiddenField();
 
@@ -92,7 +95,7 @@ class Datagrid extends SQLgrid
                         $_key_field = $this->fieldNumericName[$_key];
                     }
                     if (isset($_data[$_key_field])) {
-                        $_ids .= $_data[$_key_field].':';
+                        $_ids .= $_data[$_key_field].'/';
                     }
                 }
                 $_ids = substr_replace($_ids, '', -1);
@@ -112,47 +115,65 @@ class Datagrid extends SQLgrid
         // row action header
         foreach ($this->rowActions as $_head => $_val) {
             $this->rowActionsHeader[] = $_head;
-            $this->column_width[] = '5%';
+            $this->table->columnWidth[] = '20px';
         }
 
         // row action header
         $this->gridResultFields = array_merge($this->rowActionsHeader, $this->gridResultFields);
 
         // set table grid header
-        $this->setHeader(self::makeHeaderField());
-;
-        // datagrid output
-        $_datagrid = parent::output(true);
+        $this->table->setHeader(self::makeHeaderField());
 
-        // datagrid action and buttons bar
-        $_action_bar = '<div class="datagrid-action">';
-        $_action_bar_top = $_action_bar;
-        // action buttons
-        $_buttons = '<div class="datagrid-action-buttons">';
-        // action options
-        if ($this->actionOptions) {
-            $_buttons .= 'Action : <select name="batchOp" class="datagrid-action-select">';
-            foreach ($this->actionOptions AS $_opt) {
-                $_buttons .= '<option value="?req='.$_opt[0].'&'.Simbio::rebuildURLQuery('', array('p')).'">'.$_opt[1].'</option>';
-            }
-            $_buttons .= '</select>';
-            $_buttons .= ' <input type="button" value="Submit" />';
+        // remove hidden fields if any
+        $this->removeHiddenField();
+        // data loop
+        foreach ($this->gridResultRows as $_data) {
+            // append array to table
+            $this->table->appendTableRow($_data);
         }
+
+        // datagrid output
+        $_datagrid = $this->table->printTable();
+
         // paging
         $_paging = '';
-        if ($this->paging_list) {
-            $_paging = '<div class="datagrid-paging">'.Simbio::makePaging($this->paging_list).'</div><hr size="1" />';
+        // create paging
+        if ($this->num_rows > $this->numToShow AND $this->withPaging) {
+            $_paging = Utility::makePaging(Paging::build($this->num_rows, $this->numToShow, 10));
         }
 
-        // action buttons
-        $_buttons .= '<input type="button" value="Check All" class="button check-all" />'
-            .'&nbsp;<input type="button" value="Uncheck All" class="button uncheck-all" />';
-        $_buttons .= '</div>';
-        // action bars add
-        $_action_bar_top .= $_paging.$_buttons."</div>\n";
-        $_action_bar .= $_paging.preg_replace('@Action.*<select.+<\/select>\s*@i', '', $_buttons)."</div>\n";
+        // defaults
+        $_action_bar = '';
+        $_action_bar_top = '';
+        $_buttons = '';
+
+        if ($this->actionOptions || $_paging) {
+            // datagrid action and buttons bar
+            $_action_bar = '<div class="datagrid-action">';
+            $_action_bar_top = $_action_bar;
+            $_buttons = '';
+            // action options
+            if ($this->actionOptions) {
+                // action buttons
+                $_buttons = '<div class="datagrid-buttons">';
+                $_buttons .= 'Action: <select name="datagrid-option" class="datagrid-option">';
+                foreach ($this->actionOptions AS $_opt) {
+                    $_buttons .= '<option class="datagrid-option-item" value="'.$_opt[0].'">'.$_opt[1].'</option>';
+                }
+                $_buttons .= '</select>';
+                $_buttons .= ' <input type="submit" class="datagrid-submit" value="Submit" /> ';
+                // action buttons
+                $_buttons .= '<input type="button" value="Check All" class="button check-all" /> '
+                    .'<input type="button" value="Uncheck All" class="button uncheck-all" />';
+                $_buttons .= '</div>';
+            }
+            // action bars add
+            $_action_bar_top .= $_paging.$_buttons."</div>\n";
+            $_action_bar .= $_paging.preg_replace('@Action.*<select.+<\/select>\s*@i', '', $_buttons)."</div>\n";
+        }
+
         // final output
-        $_output = '<form id="'.$this->table_name.'Form" name="'.$this->table_name.'Form" action="'.$this->actionURI.'" method="post">';
+        $_output = '<form id="'.$this->table->tableName.'-form" name="'.$this->table->tableName.'-form" action="'.$this->actionURI.'" method="post">';
         $_output .= $_action_bar_top;
         $_output .= $_datagrid;
         $_output .= $_action_bar;
@@ -191,7 +212,7 @@ class Datagrid extends SQLgrid
      * @param   array   $arr_options
      * @return  void
      */
-    public function batchActionOptions($arr_options)
+    public function setActionOptions($arr_options)
     {
         $this->actionOptions = $arr_options;
     }

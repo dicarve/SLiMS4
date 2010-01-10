@@ -19,15 +19,17 @@
  *
  */
 
+require 'FormMaker.inc.php';
+
 class FormOutput extends FormMaker
 {
     public $disabled = false;
     public $formInfo = '';
     public $submitName = 'Submit';
     public $submitValue = 'Submit';
-    public $submitCallback = false;
-    public $iframeSubmit = false;
-    protected $fieldset = false;
+    public $submitAjax = false;
+    public $submitIframe = false;
+    public $includeReset = false;
 
     /**
      * Constructor
@@ -38,6 +40,7 @@ class FormOutput extends FormMaker
      */
     public function __construct($str_form_name = 'simbio-form', $str_form_action = '', $str_form_method = 'post', $bool_enable_upload = true)
     {
+        $str_form_name = strtolower(str_replace(' ', '-', $str_form_name));
         parent::__construct($str_form_name, $str_form_action, $str_form_method, $bool_enable_upload);
     }
 
@@ -65,68 +68,56 @@ class FormOutput extends FormMaker
     /**
      * Method to output form in list model view
      *
-     * @param   object  $obj_form_maker
      * @return  string
      */
-    public function output()
+    public function build()
     {
-        $_buffer = '<div class="form-wrapper '.$this->form_name.'">'."\n";
+        $_buffer = '<div class="form-wrapper '.$this->formName.'" id="'.$this->formName.'">'."\n";
         $_buffer .= parent::startForm();
         if ($this->formInfo) {
             $_buffer .= '<div class="form-info">'.$this->formInfo.'</div>'."\n";
         }
-        // section form tabs
-        if (count($this->sections) > 0) {
-            $_buffer .= '<div class="form-section tabs tabs-border-bottom">';
-            $_buffer .= '<ul class="tab-list">';
-            foreach ($this->sections as $_tab) {
-                $_buffer .= '<li><a href="#" section="'.$_tab.'"><span>'.ucwords(str_replace(array('-', '_'), ' ', $_tab)).'</span></a></li>';
-            }
-            $_buffer .= '</ul>&nbsp;';
-            $_buffer .= '</div>'."\n";
-            $_buffer .= '<div class="tabs-spacer">&nbsp;</div>'."\n";
-        }
         // output element
-        foreach ($this->elements AS $_form_element) {
+        foreach ($this->elements as $_form_element) {
             // check for fieldset
-            if (isset($_form_element['header'])) {
-                $_buffer .= '<a name="'.$_form_element['label'].'"></a><h3>'.ucwords($_form_element['label']).'</h3>'."\n";
-            } else if (isset($_form_element['fieldset'])) {
-                // check for fieldset closure
-                if ($this->fieldset) {
+            if (is_subclass_of($_form_element, 'FormElement')) {
+                $_buffer .= '<div class="form-element-wrapper">'."\n";
+                $_buffer .= '<label class="form-element-label" for="'.$_form_element->name.'">'.$_form_element->label.'</label>'."\n";
+                $_buffer .= '<div class="form-element-content">'.$_form_element->out().'</div>'."\n";
+                if ($_form_element->description) {
+                    $_buffer .= '<div class="form-element-desc">'.$_form_element->description.'</div>'."\n";
+                }
+                $_buffer .= '</div>'."\n";
+            } else if (!is_object($_form_element)) {
+                if (isset($_form_element['header'])) {
+                    $_buffer .= '<a name="'.$_form_element['label'].'"></a><h3>'.ucwords($_form_element['label']).'</h3>'."\n";
+                } else if (isset($_form_element['fieldset'])) {
+                    $_buffer .= '<fieldset>'."\n";
+                    $_buffer .= '<legend class="form-element-label">'.ucwords($_form_element['label']).'</legend>';
+                } else if (isset($_form_element['fieldset_end'])) {
                     $_buffer .= '</fieldset>'."\n";
                 }
-                $this->fieldset = true;
-                $_buffer .= '<fieldset>'."\n";
-                $_buffer .= '<legend class="form-element-label">'.ucwords($_form_element['label']).'</legend>';
-            } else if (isset($_form_element['fieldset_end'])) {
-                $this->fieldset = false;
-                $_buffer .= '</fieldset>'."\n";
-            } else {
-                $_buffer .= '<div class="form-element-wrapper'.( !empty($_form_element['section'])?' '.$_form_element['section']:'' ).'">';
-                $_buffer .= '<label class="form-element-label" for="'.$_form_element['element']->element_name.'">'.$_form_element['element']->label_text.'</label>'."\n";
-                $_buffer .= '<div class="form-element-content">'.$_form_element['element']->out().'</div>'."\n";
-                if ($_form_element['element']->element_desc) {
-                    $_buffer .= '<div class="form-element-desc">'.$_form_element['element']->element_desc.'</div>'."\n";
-                }
-                $_buffer .= '</div>';
             }
-        }
-        // fieldset final closure
-        if ($this->fieldset) {
-            $_buffer .= '</fieldset>'."\n";
         }
         // hidden element
         foreach ($this->getHiddenElements() AS $_hidden_element) {
             $_buffer .= $_hidden_element->out()."\n";
         }
         // submit button
-        if ($this->submitCallback) {
-            $_buffer .= '<div class="form-buttons"><input type="button" value="'.$this->submitValue.'" class="form-submit-callback" /></div>';
+        if ($this->submitAjax) {
+            $_buffer .= '<div class="form-buttons"><input type="submit" name="'.$this->submitName.'" id="'.$this->submitName.'" value="'.$this->submitValue.'" class="form-submit-ajax" />';
+            if ($this->includeReset) {
+                $_buffer .= ' <input type="reset" value="Reset Data" class="form-reset" />';
+            }
+            $_buffer .= '</div>'."\n";
         } else {
-            $_buffer .= '<div class="form-buttons"><input type="submit" name="'.$this->submitName.'" class="form-submit" value="'.$this->submitValue.'" /></div>'."\n";
-            if ($this->iframeSubmit) {
-                $_buffer .= '<input type="hidden" name="ajaxID" value="8hya77yt5129h" />'."\n";
+            $_buffer .= '<div class="form-buttons"><input type="submit" name="'.$this->submitName.'" id="'.$this->submitName.'" class="form-submit" value="'.$this->submitValue.'" />';
+            if ($this->includeReset) {
+                $_buffer .= ' <input type="reset" value="Reset Data" class="form-reset" />';
+            }
+            $_buffer .= '</div>'."\n";
+            if ($this->submitIframe) {
+                $_buffer .= '<input type="hidden" name="viaIframe" value="1" />'."\n";
                 $_buffer .= '<iframe name="submitExec" style="visibility: hidden; width: 0; height: 0; border: 0;"></iframe>'."\n";
                 // below line is for debugging purpose only
                 // $_buffer .= '<iframe name="submitExec" style="visibility: visible; width: 100%; height: 300px;"></iframe>'."\n";
@@ -135,9 +126,48 @@ class FormOutput extends FormMaker
         $_buffer .= parent::endForm();
         // disable form
         if ($this->disabled) {
-            $_buffer .= '<script type="text/javascript"></script>';
+            $_buffer .= '<script type="text/javascript">jQuery(\'#'.$this->formName.'\').disableForm()</script>';
         }
         $_buffer .= '</div>';
+
+        return $_buffer;
+    }
+
+
+    /**
+     * Method to output form in simple mode
+     *
+     * @return  string
+     */
+    public function buildSimple()
+    {
+        $_buffer = '<span class="simple-form-wrapper '.$this->formName.'" id="'.$this->formName.'">'."\n";
+        $_buffer .= parent::startForm();
+        if ($this->formInfo) {
+            $_buffer .= '<span class="form-info">'.$this->formInfo.'</span>'."\n";
+        }
+        // output element
+        foreach ($this->elements as $_form_element) {
+            // check for fieldset
+            if (is_subclass_of($_form_element, 'FormElement')) {
+                $_buffer .= '<span class="form-element-wrapper">';
+                $_buffer .= '<label class="form-element-label" for="'.$_form_element->name.'">'.$_form_element->label.'</label>: ';
+                $_buffer .= '<span class="form-element-content">'.$_form_element->out().'</span>';
+                $_buffer .= '</span>'."\n";
+            }
+        }
+        // hidden element
+        foreach ($this->getHiddenElements() AS $_hidden_element) {
+            $_buffer .= $_hidden_element->out()."\n";
+        }
+        // submit button
+        $_buffer .= '<span class="form-buttons"><input type="submit" name="'.$this->submitName.'" id="'.$this->submitName.'" class="simple-form-submit" value="'.$this->submitValue.'" /></span>'."\n";
+        $_buffer .= parent::endForm();
+        // disable form
+        if ($this->disabled) {
+            $_buffer .= '<script type="text/javascript">jQuery(\'#'.$this->formName.'\').disableForm()</script>';
+        }
+        $_buffer .= '</span>';
 
         return $_buffer;
     }

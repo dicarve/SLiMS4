@@ -5,9 +5,9 @@ body {
 }
 
 * {
-  font-family: Helvetica, Arial;
-  font-size: 11px;
-  color: #666;
+  font-family: Helvetica, sans-serif;
+  font-size: 12px;
+  color: #000;
 }
 
 #header {
@@ -28,6 +28,10 @@ body {
 }
 
 #app-title a {
+  text-decoration: none;
+}
+
+#app-title span {
   margin-left: 10px;
   color: #666;
   font-size: 21px;
@@ -98,10 +102,6 @@ body {
   color: #000;
 }
 
-#header-info {
-  padding: 5px;
-}
-
 #info-box {
   background: #8effbb;
   border: 1px solid #00ab44;
@@ -121,11 +121,15 @@ body {
 }
 
 #login-form {
-  padding: 10px;
-  padding-top: 120px;
-  background: #ffd700 url(media/login-bg.png) top left no-repeat;
-  width: 400px;
-  margin: 0 auto;
+  padding: 5px;
+  background: #ccc;
+  width: 98%;
+}
+
+#login-form label {
+  font-weight: bold;
+  color: #003380;
+  font-size: 110%;
 }
 
 #simple-search {
@@ -142,6 +146,16 @@ body {
   width: 80%;
 }
 
+#map-canvas {
+  border: 1px dotted #ccc;
+}
+
+#footer {
+  border: 1px solid #999;
+  padding: 5px;
+  margin-top: 5px;
+  width: 920px;
+}
 
 /*
  * Tabs CSS
@@ -150,29 +164,30 @@ body {
 
 div.tabs
 {
-  margin: 0 0 0 0;
+  margin: 0 auto;
 }
 
-#primary-links
+.tabs-list
 {
   margin: 0;
-  margin-left: 0px;
-  padding: 0 0 0 10px;
-  border-width: 0;
+  margin-left: 10px;
+  padding: 0;
   list-style: none;
   white-space: nowrap;
   line-height: normal;
   background: url(media/tab-bar.png) repeat-x left bottom;
+  float: left;
+  width: 100%;
 }
 
-#primary-links li
+.tabs-list li
 {
   float: left;
   margin: 0;
   padding: 0;
 }
 
-#primary-links li a
+.tabs-list li a
 {
   display: block;
   height: 24px;
@@ -181,12 +196,11 @@ div.tabs
   border-width: 0;
   font-weight: bold;
   text-decoration: none;
-  color: #777;
   background-color: transparent;
   background: url(media/tab-left-new.gif) no-repeat left -38px;
 }
 
-#primary-links li a span
+.tabs-list li a span
 {
   display: block;
   height: 20px; /* 24px (parent) - 4px (padding) */
@@ -196,21 +210,23 @@ div.tabs
   line-height: 20px;
   background: url(media/tab-right-new.gif) no-repeat right -38px;
   cursor: pointer;
+  color: #003380;
 }
 
-#primary-links li a:hover
+.tabs-list li a:hover
 {
   border-width: 0;
   background-color: transparent;
   background: url(media/tab-left-new.gif) no-repeat left -76px;
 }
 
-#primary-links li a:hover span
+.tabs-list li a:hover span
 {
+  color: #000;
   background: url(media/tab-right-new.gif) no-repeat right -76px;
 }
 
-#primary-links li.active a, #primary-links li.active a:hover
+.tabs-list li a:active, .tabs-list li a:hover
 {
   border-width: 0;
   color: #000;
@@ -218,7 +234,7 @@ div.tabs
   background: url(media/tab-left-new.gif) no-repeat left 0;
 }
 
-#primary-links li.active a span, #primary-links li.active a:hover span
+.tabs-list li a:active span, .tabs-list li a:hover span
 {
   background: url(media/tab-right-new.gif) no-repeat right 0;
 }
@@ -226,23 +242,16 @@ div.tabs
 
 /* IE */
 
-#primary-links li a, #primary-links li a span
+.tabs-list li a, .tabs-list li a span
 {
   _display: inline; /* Otherwise the blocks mistakenly get 100% width in IE5 */
   _di\splay: inline-block; /* Otherwise the blocks mistakenly get 100% width in IE6 */
 }
 
-#primary-links
+.tabs-list
 {
   _width: 100%; /* Otherwise IE5 treats the ul as floated */
   _w\idth: auto; /* Reset to auto width for IE6 */
-}
-
-#footer {
-  border: 1px solid #999;
-  padding: 5px;
-  margin-top: 5px;
-  width: 920px;
 }
 
 .datagrid {
@@ -271,11 +280,12 @@ div.tabs
   padding: 5px;
 }
 
-.datagrid-head span.datagrid-head-plain {
+.datagrid-head-plain {
   display: block;
   font-weight: bold;
   font-size: 1.1em;
   padding: 5px;
+  border: 0;
 }
 
 .datagrid-content {
@@ -293,11 +303,11 @@ div.tabs
   text-decoration: none;
 }
 
-.alter-row {
-  background: #ccc;
+.row-even {
+  background: #a3ceff;
 }
 
-.alter-row2 {
+.row-odd {
   background: #fff;
 }
 
@@ -309,8 +319,8 @@ div.tabs
   margin-bottom: 10px;
 }
 
-.block-title {
-  font-size: 15px;
+.block-title, .content-title {
+  font-size: 130%;
   font-weight: bold;
   padding-bottom: 5px;
   margin-bottom: 5px;
@@ -318,84 +328,45 @@ div.tabs
   color: #003380;
 }
 
-.block input[type=text],select,textarea {
+.block input[type=text],.block select,.block textarea,.block input[type=password] {
   display: block;
   width: 98%;
   margin-top: 3px;
   margin-bottom: 3px;
 }
 
+.form-wrapper {
+  border: 1px ridge #999;
+  padding: 5px;
+}
+
+.form-wrapper .form-element-label {
+  font-weight: bold;
+}
+
+.form-wrapper .form-element-wrapper input[type=text] {
+  width: 98%;
+}
+
+.form-wrapper .form-element-wrapper input[type=password] {
+  width: 98%;
+}
+
+.form-wrapper .form-element-wrapper textarea {
+  width: 98%;
+}
+
+.form-info {
+  font-size: 110%;
+  font-style: italic;
+  margin-bottom: 7px;
+}
+
+.form-element-wrapper {
+  margin-bottom: 7px;
+}
+
 .container_12 {
   background: #fff url(media/header-bg.png) right top no-repeat;
   border: 1px solid #777;
-}
-
-/* OPAC List */
-.detailLink, .xmlDetailLink {
-    padding: 1px;
-    border: 1px solid #999999;
-    text-decoration: none;
-    background-color: #CCCCCC;
-}
-
-.xmlDetailLink {
-    background-color: #FF9900;
-}
-
-.xmlResultLink {
-    padding: 1px;
-    padding-left: 3px;
-    padding-right: 3px;
-    font-size: 12px;
-    font-weight: bold;
-    background-color: #003380;
-    text-decoration: none;
-    color: #FFFFFF;
-}
-
-.item {
-    min-height: 70px;
-    text-align: left;
-    margin: 5px;
-    margin-bottom: 10px;
-    padding: 5px;
-    padding-top: 1px;
-    padding-left: 53px;
-    background: url(media/image.png) top left no-repeat;
-}
-
-.item a,a:hover {
-    font-size: 12px;
-    font-weight: bold;
-}
-
-.item a:hover {
-    text-decoration: none;
-    color: #459801;
-}
-
-.item .detailLink {
-    font-size: 10px;
-}
-
-.item .xmlDetailLink {
-    font-size: 10px;
-    background-color: #FF9900;
-}
-
-.subItem {
-    margin-top: 3px;
-}
-
-.marginTop {
-    margin-top: 5px;
-}
-
-.tblHead {
-  font-weight: bold;
-  color: #003380;
-}
-
-.tblHead,.tblContent {
-  border-bottom: 1px solid #ccc;
 }

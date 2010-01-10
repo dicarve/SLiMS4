@@ -21,7 +21,7 @@
  *
  */
 
-class SQLgrid extends Table
+abstract class SQLgrid
 {
     /**
      * Private properties
@@ -66,22 +66,20 @@ class SQLgrid extends Table
      * @param   object  $obj_db
      * @return  void
      */
-    public function __construct($obj_db)
-    {
+    public function __construct($obj_db) {
         $this->objDB = $obj_db;
     }
 
 
     /**
-     * Method to create datagrid
+     * Method to proccess/create datagrid
      *
      * @param   object  $obj_db
      * @param   string  $str_db_table
      * @param   integer $int_num2show
      * @return  string
      */
-    public function createDataGrid($str_db_table = '')
-    {
+    public function create($str_db_table = '') {
         // check database connection
         if (!$this->objDB) {
             $this->error = 'No database connection or database connection error!';
@@ -89,7 +87,6 @@ class SQLgrid extends Table
         }
 
         $this->sqlTable = $str_db_table;
-        $this->highlight_row = true;
 
         if (!$this->sqlTable && !$this->sqlString) {
             $this->error = 'No database table specified yet!';
@@ -164,16 +161,17 @@ class SQLgrid extends Table
         }
 
         // total rows query
-        $_num_query = $this->objDB->query($_sql_count_str);
-        $this->num_rows = simbio::fetchColumn($_num_query);
+        $_num_q = $this->objDB->query($_sql_count_str);
+        $_num_d = $_num_q->fetch_row();
+        $this->num_rows = $_num_d[0];
 
         // check if there is no rows returned
         if ($this->num_rows < 1) {
-            return $this->printTable();
+            return;
         }
 
         // check the query string and rebuild with urlencoded value
-        $_url_query_str = simbio::rebuildURLQuery('', array('fld', 'dir'));
+        $_url_query_str = Utility::rebuildURLQuery('', array('fld', 'dir'));
 
         // make all field name link for sorting
         $this->gridResultFields = array();
@@ -229,8 +227,6 @@ class SQLgrid extends Table
             $_row++;
             $_result_row++;
         }
-
-        return $this->output($this->numToShow);
     }
 
 
@@ -258,41 +254,6 @@ class SQLgrid extends Table
     public function modifyColumnContent($str_column, $str_new_value)
     {
         $this->modifiedContent[$str_column] = $str_new_value;
-    }
-
-
-    /**
-     * Method to format an output of datagrid
-     *
-     * @param   integer $int_num2show
-     * @param   boolean $bool_with_paging
-     * @return  string
-     */
-    protected function output($bool_with_paging = true)
-    {
-        // remove hidden fields if any
-        $this->removeHiddenField();
-        // data loop
-        foreach ($this->gridResultRows as $_data) {
-            // append array to table
-            $this->appendTableRow($_data);
-        }
-
-        // init buffer return var
-        $_buffer = '';
-
-        // create paging
-        if ($this->num_rows > $this->numToShow AND $bool_with_paging) {
-            if (function_exists($this->pagingHandler)) {
-                $_paging = $this->pagingHandler;
-                $this->pagingList = $_paging($this->num_rows, $this->numToShow, 5);
-            }
-        } else {
-            $this->pagingList =  false;
-        }
-        $_buffer .= $this->printTable();
-
-        return $_buffer;
     }
 
 
@@ -341,21 +302,12 @@ class SQLgrid extends Table
     {
         if (is_array($mix_field_list)) {
             // iterate all arguments
-            foreach ($mix_field_list as $_field) {
-                $_column_alias = '';
-                $_real_column = '';
-                if (stripos($_field, ' AS ') > 0) {
-                    $_field_n_alias = explode(' AS ', $_field);
-                    $_real_column = '`'.$_field_n_alias[0].'`';
-                    $_column_alias = str_replace("'", '', $_field_n_alias[1]);
-                } else {
-                    $_real_column = '`'.$_field.'`';
-                    $_column_alias = '`'.$_field.'`';
-                }
+            foreach ($mix_field_list as $_alias => $_field) {
+                $_alias = is_string($_alias)?trim(str_replace('`', '', $_alias)):$_alias;
                 // store to class properties
-                $this->sqlColumn .= $_field.', ';
+                $this->sqlColumn .= '`'.$_field.'`'.( is_int($_alias)?'':' AS `'.$_alias.'`' ).', ';
                 // $this->sortColumn[trim($_column_alias)] = trim($_real_column);
-                $this->sortColumn[trim($_column_alias)] = trim($_column_alias);
+                $this->sortColumn[$_alias] = $_field;
             }
             // remove the last comma
             $this->sqlColumn = substr_replace($this->sqlColumn, ' ', -2);
@@ -388,7 +340,7 @@ class SQLgrid extends Table
      *
      * @param   string  $str_order_column
      */
-    public function setSQLorder($str_order_column)
+    public function setSQLOrder($str_order_column)
     {
         if ($str_order_column) {
             // remove WHERE word if exist

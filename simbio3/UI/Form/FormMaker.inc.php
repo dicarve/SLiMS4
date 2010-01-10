@@ -32,14 +32,14 @@ require 'FormContent.inc.php';
 abstract class FormMaker
 {
     public $submitTarget = '_self';
-    public $formName = 'formMaker';
+    public $formName = 'form';
+    public $formID = 'form';
     protected $elements = array();
     protected $hiddenElements = array();
     protected $method = '';
     protected $action = '';
     protected $disable = '';
     protected $enableUpload = true;
-    protected $sections = array();
 
     /**
      * Class Constructor
@@ -49,13 +49,14 @@ abstract class FormMaker
      * @param   string  $str_form_method
      * @param   boolean $bool_enable_upload
      */
-    public function __construct($str_form_name = 'mainForm', $str_form_action = '', $str_form_method = 'post', $bool_enable_upload = true)
-    {
+    public function __construct($str_form_name = 'mainForm', $str_form_action = '', $str_form_method = 'post', $bool_enable_upload = true) {
         $this->formName = $str_form_name;
+        $this->formID = $str_form_name;
         $this->action = $str_form_action;
         $this->method = $str_form_method;
         $this->enableUpload = $bool_enable_upload;
     }
+
 
     /**
      * Method to add form elements based on field definition array
@@ -63,10 +64,13 @@ abstract class FormMaker
      * @param   array   $arr_element_def
      * @return  void
      */
-    public function add($arr_element_def)
-    {
+    public function add($arr_element_def) {
         $_element = self::createFormElement($arr_element_def);
-        $this->elements[$_element->name] = array('element' => $_element);
+        if ($arr_element_def['type'] == 'hidden') {
+            $this->hiddenElements[$_element->name] = $_element;
+        } else {
+            $this->elements[$_element->name] = $_element;
+        }
     }
 
 
@@ -76,8 +80,7 @@ abstract class FormMaker
      * @param   array       $arr_element_def : form element array
      * @return  object
      */
-    public static function createFormElement($arr_element_def)
-    {
+    public static function createFormElement($arr_element_def) {
         // form element name
         $_name = $arr_element_def['id'];
         // element type
@@ -104,8 +107,8 @@ abstract class FormMaker
         }
         // field additional attribute
         $_attr = '';
-        if (isset($arr_element_def['attr']) AND $arr_element_def['attr']) {
-            $_attr = $arr_element_def['attr'];
+        if (isset($arr_element_def['attr'])) {
+            $_attr = Utility::createHTMLAttribute($arr_element_def['attr']);
         }
 
         // creating element instance
@@ -113,7 +116,7 @@ abstract class FormMaker
             // create instance
             $_form_element = new FormText();
             $_form_element->type = $_type;
-            $_attr .= ' '.$_size.' maxlength="'.$_length.'" ';
+            $_attr .= ' maxlength="'.$_length.'" ';
         } else if (in_array($_type, array('select', 'list', 'dropdown'))) {
             $_form_element = new FormSelect();
             $_form_element->options = $arr_element_def['options'];
@@ -132,24 +135,26 @@ abstract class FormMaker
             $_form_element->name = $_name;
             $_form_element->type = 'hidden';
             $_form_element->value = $_value;
-            $this->hiddenElements[$_name] = $_form_element;
             return $_form_element;
         } else if ($_type == 'content') {
-            $_form_element = new simbio_form_maker_anything();
+            $_form_element = new FormContent();
             $_form_element->content = isset($arr_element_def['content'])?trim($arr_element_def['content']):'';
-            $this->elements[$_name] = array('label' => $arr_element_def['label'], 'element' => $_form_element, 'desc' => $_description);
+            return $_form_element;
         }
 
         // require field marker
-        if ($_required) { $arr_element_def['label'] .= '*'; } else if ($_type == 'hidden') { $arr_element_def['label'] = ''; }
+        if ($_required) {
+            $arr_element_def['label'] .= '*';
+            $_form_element->required = true;
+        } else if ($_type == 'hidden') { $arr_element_def['label'] = ''; }
 
         // set attribute
-        $_form_element->attribute = $_attr.' '.$_size;
+        $_form_element->attribute = $_attr;
         // set default value
         $_form_element->name = $_name;
-        $_form_element->element_desc = $_description;
+        $_form_element->description = $_description;
         $_form_element->value = $_value;
-        $_form_element->label_text = $arr_element_def['label'];
+        $_form_element->label = $arr_element_def['label'];
 
         return $_form_element;
     }
@@ -160,11 +165,10 @@ abstract class FormMaker
      *
      * @return  string
      */
-    public function startForm()
-    {
+    public function startForm() {
         return '<form name="'.$this->formName.'" id="'.$this->formName.'" '
-                .'method="'.$this->method.'" '
-                .'action="'.$this->action.'" target="'.$this->submitTarget.'"'.($this->enableUpload?' enctype="multipart/form-data"':'').'>';
+            .'method="'.$this->method.'" '
+            .'action="'.$this->action.'" target="'.$this->submitTarget.'"'.($this->enableUpload?' enctype="multipart/form-data"':'').'>';
     }
 
 
@@ -173,8 +177,7 @@ abstract class FormMaker
      *
      * @return  string
      */
-    public function endForm()
-    {
+    public function endForm() {
         return '</form>';
     }
 
@@ -184,8 +187,7 @@ abstract class FormMaker
      *
      * @return array
      */
-    public function getElements()
-    {
+    public function getElements() {
         return $this->elements;
     }
 
@@ -195,20 +197,30 @@ abstract class FormMaker
      *
      * @return array
      */
-    public function getHiddenElements()
-    {
+    public function getHiddenElements() {
         return $this->hiddenElements;
     }
 
 
     /**
-     * Method to get an array of section
+     * Method to remove one or more form element
      *
-     * @return array
+     * @param   mixed   $mix_form_id: a string or an array of element to remove
+     * @return  array   return an array of removed element
      */
-    public function getSections()
-    {
-        return $this->sections;
+    public function removeElement($mix_form_id) {
+        $_removed = array();
+        if (is_array($mix_form_id)) {
+            foreach ($mix_form_id as $_id) {
+                $_removed[] = $this->elements[$_id];
+                unset($this->elements[$_id]);
+            }
+        } else if (is_string($mix_form_id)) {
+            $_removed[] = $this->elements[$mix_form_id];
+            unset($this->elements[$mix_form_id]);
+        }
+
+        return $_removed;
     }
 
 
@@ -218,6 +230,6 @@ abstract class FormMaker
      *
      * @return  void
      */
-    abstract public function output();
+    abstract public function build();
 }
 ?>

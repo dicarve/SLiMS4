@@ -1,6 +1,6 @@
 <?php
 /**
- * simbio_table class
+ * Simbio Table class
  * Class for creating HTML table
  *
  * Copyright (C) 2007,2008  Arie Nugraha (dicarve@yahoo.com)
@@ -24,16 +24,17 @@
 require 'TableField.inc.php';
 require 'TableRow.inc.php';
 
-class simbio_table
+class Table
 {
     public $tableName = 'datagrid';
     public $tableAttr = '';
     public $tableHeaderAttr = 'class="datagrid-head"';
-    public $tableContentAttr = '';
+    public $tableContentAttr = 'class="datagrid-content"';
     public $tableRow = array();
     public $cellAttr = array();
     public $highlightRow = false;
     public $columnWidth = array();
+    public $alternateRow = true;
 
     /**
      * Class Constructor
@@ -49,16 +50,16 @@ class simbio_table
     /**
      * Method to set table headers
      *
-     * @param   array   $array_column_value
+     * @param   array   $arr_column_value
      * @return  void
      */
-    public function setHeader($array_column_content)
+    public function setHeader($arr_column_content)
     {
-        if (!is_array($array_column_content)) {
+        if (!is_array($arr_column_content)) {
             // do nothing
             return;
         } else {
-            $this->tableRow[0] = new TableRow($array_column_content);
+            $this->tableRow[0] = new TableRow($arr_column_content);
         }
     }
 
@@ -66,13 +67,13 @@ class simbio_table
     /**
      * Method to append row/record to table
      *
-     * @param   array   $array_column_content
+     * @param   array   $arr_column_content
      * @return  void
      */
-    public function appendTableRow($array_column_content)
+    public function appendTableRow($arr_column_content)
     {
         // row content must be an array
-        if (!is_array($array_column_content)) {
+        if (!is_array($arr_column_content)) {
             // do nothing
             return;
         } else {
@@ -80,7 +81,7 @@ class simbio_table
             // index 0 is reserved for table header row
             $_row_cnt = count($this->tableRow);
             // create instance of simbio_tableRow
-            $_row_obj = new TableRow($array_column_content);
+            $_row_obj = new TableRow($arr_column_content);
             if ($_row_cnt < 1) {
                 $this->tableRow[1] = $_row_obj;
             } else {
@@ -158,7 +159,8 @@ class simbio_table
      */
     public function printTable()
     {
-        $_buffer = '<table class="datagrid" id="'.$this->tableName.'" '.$this->tableAttr.'>'."\n";
+        $this->tableName = str_replace(' ', '-', strtolower(trim($this->tableName)));
+        $_buffer = '<table class="'.$this->tableName.'" id="'.$this->tableName.'" '.$this->tableAttr.'>'."\n";
 
         // check if the array have a records
         if (count($this->tableRow) < 1) {
@@ -172,15 +174,18 @@ class simbio_table
                     continue;
                 }
                 // alternate cell class
-                $_alter = (($_record_row+1)%2 == 0)?'alter-row':'alter-row2';
+                $_alter = '';
+                if ($this->alternateRow) {
+                    $_alter = (($_record_row+1)%2 == 0)?' row-even':' row-odd';
+                }
                 // print out the row objects
-                $_buffer .= '<tr class="datagrid-row '.$_alter.'" '.( $_row->attr?' '.$_row->attr:'' ).'>'."\n";
+                $_buffer .= '<tr class="'.$this->tableName.'-row'.$_alter.'" '.( $_row->attr?' '.$_row->attr:'' ).'>'."\n";
                 foreach ($_row->fields as $_field_idx => $_field) {
                     // header field
                     if ($_record_row == 0) {
-                        $_field->attr .= 'class="datagrid-head" '.$this->tableHeaderAttr;
+                        $_field->attr .= 'class="'.$this->tableName.'-head" '.$this->tableHeaderAttr;
                     } else {
-                        $_field->attr .= 'class="datagrid-content" ';
+                        $_field->attr .= 'class="'.$this->tableName.'-content" ';
                     }
                     // set column width
                     if (isset($this->columnWidth[$_field_idx]) && $_record_row == 0) {

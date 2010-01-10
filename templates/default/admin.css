@@ -1,0 +1,327 @@
+body {
+  margin: 0;
+  padding: 0;
+}
+
+table {
+  margin: 0;
+  padding: 0;
+}
+
+#header {
+  width: auto;
+  height: 90px;
+  background: #fff url(media/header-bg.png) right bottom no-repeat;
+}
+
+#main-menu {
+  width: auto;
+  margin: 0;
+  padding: 0;
+}
+
+#primary-links {
+  background: url(media/nav-link-bg.png) repeat-x top left;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  float: left;
+  width: 100%;
+}
+
+#primary-links li {
+  float: left;
+  margin: 0;
+  padding: 0;
+}
+
+#primary-links li a
+{
+  display: block;
+  height: 24px;
+  margin: 0;
+  padding: 0 0 0 5px; /* width of tab-left.png */
+  border-width: 0;
+  text-decoration: none;
+  background-color: transparent;
+}
+
+#primary-links li a span
+{
+  display: block;
+  height: 20px; /* 24px (parent) - 4px (padding) */
+  margin: 0;
+  padding: 4px 13px 0 6px;
+  border-width: 0;
+  line-height: 20px;
+  cursor: pointer;
+  color: #fff;
+}
+
+#primary-links li a:hover
+{
+  border-width: 0;
+  background-color: transparent;
+  background: url(media/tab-left-new.gif) no-repeat left -76px;
+}
+
+#primary-links li a:hover span
+{
+  color: #000;
+  background: url(media/tab-right-new.gif) no-repeat right -76px;
+}
+
+#primary-links li a.active, #primary-links li a.active:hover
+{
+  border-width: 0;
+  font-weight: bold;
+  color: #000;
+  background-color: transparent;
+  background: url(media/tab-left-new.gif) no-repeat left 0;
+}
+
+#primary-links li a.active span, #primary-links li a.active:hover span
+{
+  color: #003380;
+  background: url(media/tab-right-new.gif) no-repeat right 0;
+}
+
+#primary-links li a.logout span {
+  color: #f00;
+  font-weight: bold;
+}
+
+/* IE */
+
+#primary-links li a, #primary-links li a span
+{
+  _display: inline; /* Otherwise the blocks mistakenly get 100% width in IE5 */
+  _di\splay: inline-block; /* Otherwise the blocks mistakenly get 100% width in IE6 */
+}
+
+#primary-links
+{
+  _width: 100%; /* Otherwise IE5 treats the ul as floated */
+  _w\idth: auto; /* Reset to auto width for IE6 */
+}
+
+#content-wrapper {
+  border: 0;
+  width: 100%;
+  background: transparent;
+}
+
+#content-wrapper td {
+  border: 0;
+  margin: 0;
+}
+
+#admin-side-menu {
+  vertical-align: top;
+  width: 190px;
+}
+
+#admin-main-content-wrapper {
+  vertical-align: top;
+  padding: 0;
+  background: #fff;
+}
+
+#admin-main-content {
+  padding: 3px;
+}
+
+#footer {
+  background: #fff;
+  width: auto;
+  height: auto;
+  border: 0;
+  margin: 0;
+}
+
+#navigation-block {
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+#sysinfo {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 1px solid #999;
+}
+
+#sysinfo tr {
+  margin: 0;
+  padding: 0;
+}
+
+#sysinfo td {
+  margin: 0;
+  padding: 5px;
+  border-bottom: 1px solid #999;
+}
+
+#sysinfo .sysinfo-label {
+  background: #ccc;
+  width: 170px;
+}
+
+#loading {
+  background: #fc0 url(media/load.gif) no-repeat 10px center;
+  font-weight: bold;
+  position: fixed;
+  width: 100%;
+  padding-left: 40px;
+  z-index: 500;
+}
+
+#loading div {
+  padding: 15px;
+  font-size: 120%;
+}
+
+/**
+ * Navigation links
+ */
+
+.navigation-list {
+  padding: 0;
+  margin: 0;
+  margin-bottom: 5px;
+  list-style: none;
+}
+
+.navigation-list li {
+  display: inline;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.navigation-list li a {
+  text-decoration: none;
+}
+
+.navigation-list li a span {
+  display: block;
+  padding: 5px;
+  padding-left: 25px;
+  font-weight: bold;
+  font-size: 90%;
+  background: url(media/nav-icon.png) no-repeat 5px center;
+}
+
+.navigation-list li a:hover span, .navigation-list li a.active span {
+  background-color: #fff;
+  color: #003380;
+}
+
+.navigation-section-title {
+  font-size: 120%;
+  font-weight: bold;
+  padding: 5px;
+  background: url(media/nav-link-bg.png) repeat-x top left;
+  color: #fff;
+}
+
+.admin-menu-item {
+  margin: 5px;
+}
+
+.admin-menu-link {
+  font-weight: bold;
+  color: #003380;
+}
+
+/**
+ * Datagrid
+ */
+
+.datagrid-head {
+  background: #666 url(media/nav-link-bg.png) repeat-x top left;
+}
+
+.datagrid-head a, .datagrid-head-plain {
+  color: #fff;
+}
+
+.datagrid-action-buttons select {
+  display: inline;
+  width: 20%;
+}
+
+.datagrid-action .paging {
+  display: block;
+  float: right;
+}
+
+/**
+ * Content header
+ */
+
+.header-block {
+  border: 1px solid #999;
+  padding: 3px;
+  padding-left: 53px;
+  margin-bottom: 3px;
+  background: url(media/modules/default.png) no-repeat -5px -5px;
+}
+
+.header-block .header-menu {
+  height: 25px;
+}
+
+.header-block .header-menu a {
+  display: block;
+  padding: 3px;
+  padding-left: 23px;
+  margin-right: 5px;
+  font-weight: bold;
+  float: left;
+  background: url(media/list.png) no-repeat top left;
+}
+
+.header-block .header-menu .add {
+  background-image: url(media/add.png);
+}
+
+.header-block .simple-form-wrapper input {
+  width: auto;
+  display: inline;
+}
+
+.header-block .simple-form-wrapper input[type=text] {
+  width: 40%;
+}
+
+.form-update-buttons {
+  height: 2em;
+}
+
+.form-update-buttons a {
+  display: block;
+  padding: 5px;
+  font-size: 100%;
+  font-weight: bold;
+  float: left;
+  margin-left: 5px;
+}
+
+.form-update-buttons .form-unlock {
+  padding-left: 23px;
+  background: url(media/action/edit.png) no-repeat left center;
+}
+
+.form-update-buttons .form-cancel {
+  padding-left: 23px;
+  background: url(media/action/cancel.png) no-repeat left center;
+}
+
+/**
+ * Modules
+ */
+#taxonomy {
+  background-image: url(media/modules/taxonomy.png);
+}

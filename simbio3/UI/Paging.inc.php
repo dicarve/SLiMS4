@@ -31,7 +31,7 @@ class Paging
      * @param   string  $str_fragment
      * @return  array
      */
-    public static function create($int_all_recs_num, $int_recs_each_page, $int_pages_each_set = 10, $str_fragment = '#')
+    public static function build($int_all_recs_num, $int_recs_each_page, $int_pages_each_set = 10, $str_fragment = '#')
     {
         // check for wrong arguments
         if ($int_recs_each_page > $int_all_recs_num) {

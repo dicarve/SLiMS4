@@ -28,13 +28,20 @@ class simbio_fe_select extends FormElement
     {
         // check for $array_option param
         if (!is_array($this->options)) {
-            return '<select name="'.$this->name.'" '.$this->attribute.'></select>';
+            return '<select class="'.$this.'" name="'.$this->name.'" '.$this->attribute.'></select>';
         }
         // check if disabled
         if ($this->disabled) {
             $_disabled = ' disabled="disabled"';
         } else { $_disabled = ''; }
-        $_buffer = '<select name="'.$this->name.'" id="'.$this->name.'" '.$this->attribute.''.$_disabled.'>'."\n";
+
+        // check if required
+        $_required = '';
+        if ($this->required) {
+            $_required = 'required';
+        }
+
+        $_buffer = '<select class="'.( $this->cssClass?$this->cssClass.' '.$_required:$_required ).'" name="'.$this->name.'" id="'.$this->name.'" '.$this->attribute.''.$_disabled.'>'."\n";
         foreach ($this->options as $option) {
             if (is_string($option)) {
                 // if the selected element is an array then

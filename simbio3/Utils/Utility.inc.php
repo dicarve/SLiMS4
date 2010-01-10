@@ -2,7 +2,7 @@
 /**
  * Application wide utility function
  *
- * Copyright (C) 2009,2010  Arie Nugraha (dicarve@yahoo.com)
+ * Copyright (C) 2009,2010  Arie Nugraha (dicarve@yahoo.com), Hendro Wicaksono (hendrowicaksono@yahoo.com)
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,6 +41,61 @@ class Utility {
 	echo '</div>'."\n";
         $_block = ob_get_clean();
         return $_block;
+    }
+
+
+    /*
+     * Static Method to create block
+     *
+     * @param   string  $arr_attribute: an array containing pair attributeName => attributeValue
+     * @return  string
+     */
+    public static function createHTMLAttribute($arr_attribute)
+    {
+        $_attrs = '';
+        if (is_array($arr_attribute) && count($arr_attribute) > 0) {
+            foreach ($arr_attribute as $_name => $_value) {
+                $_attrs .= ' '.$_name.'="'.$_value.'"';
+            }
+        }
+        return $_attrs;
+    }
+
+
+    /**
+     * Static Method to redirect page to https equivalent
+     *
+     * @param   integer $int_https_port
+     * @return  void
+     */
+    public static function checkHttps($int_https_port)
+    {
+        $server_https_port = $_SERVER['SERVER_PORT'];
+        if ($server_https_port != $int_https_port) {
+            $host =  $_SERVER['SERVER_NAME'];
+            $https_url = 'https://'.$host.$_SERVER['PHP_SELF'];
+            // send HTTP header
+            header("Location: $https_url");
+        }
+    }
+
+
+    /**
+     * Destroy session and its cookies
+     *
+     * @param   string  $str_session_name: name of session to remove
+     * @param   string  $str_cookie_path: path of session cookie
+     * @return  void
+     */
+    public static function destroySessionCookie($str_session_name = '', $str_cookie_path = '/')
+    {
+        if (!$str_session_name) { $str_session_name = session_name(); }
+        // deleting session browser cookie
+        @setcookie($str_session_name, '', time()-86400, $str_cookie_path);
+        // reset session
+        $_SESSION = array();
+        // remove server session file
+        session_destroy();
     }
 
 

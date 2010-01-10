@@ -33,6 +33,7 @@ abstract class FormElement
     public $cssClass = '';
     public $disabled = false;
     public $label = '';
+    public $required = false;
 
     /**
      * Below method must be inherited

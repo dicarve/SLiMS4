@@ -42,17 +42,22 @@ class FormText extends FormElement
                 $this->attribute .= 'maxlength="'.(30*1024).'"';
             }
         }
+        // check if required
+        $_required = '';
+        if ($this->required) {
+            $_required = 'required';
+        }
 
         // checking element type
         if ($this->type == 'textarea') {
-            $_buffer .= '<textarea name="'.$this->name.'" id="'.$this->name.'" '.$this->attribute.''.$_disabled.'>';
+            $_buffer .= '<textarea class="'.( $this->cssClass?$this->cssClass.' '.$_required:$_required ).'" name="'.$this->name.'" id="'.$this->name.'" '.$this->attribute.''.$_disabled.'>';
             $_buffer .= $this->value;
             $_buffer .= '</textarea>'."\n";
         } else if (stripos($this->type, 'date', 0) !== false) {
-            $_buffer .= '<div class="dateField"><input class="dateInput" type="'.$this->type.'" name="'.$this->name.'" id="'.$this->name.'" ';
-            $_buffer .= 'value="'.$this->value.'" '.$this->attribute.''.$_disabled.' /><a class="calendarLink" href="#" onclick="javascript: dateType = \''.$this->type.'\'; openCalendar(\''.$this->name.'\');" title="Open Calendar"></a></div>'."\n";
+            $_buffer .= '<input class="dateInput'.( $this->cssClass?' '.$this->cssClass.' '.$_required:' '.$_required ).'" type="'.$this->type.'" name="'.$this->name.'" id="'.$this->name.'" ';
+            $_buffer .= 'value="'.$this->value.'" '.$this->attribute.''.$_disabled.' />'."\n";
         } else {
-            $_buffer .= '<input type="'.$this->type.'" name="'.$this->name.'" id="'.$this->name.'" ';
+            $_buffer .= '<input class="'.( $this->cssClass?$this->cssClass.' '.$_required:$_required ).'" type="'.$this->type.'" name="'.$this->name.'" id="'.$this->name.'" ';
             $_buffer .= 'value="'.$this->value.'" '.$this->attribute.''.$_disabled.' />'."\n";
         }
 
