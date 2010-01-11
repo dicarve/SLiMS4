@@ -40,7 +40,6 @@ class FormOutput extends FormMaker
      */
     public function __construct($str_form_name = 'simbio-form', $str_form_action = '', $str_form_method = 'post', $bool_enable_upload = true)
     {
-        $str_form_name = strtolower(str_replace(' ', '-', $str_form_name));
         parent::__construct($str_form_name, $str_form_action, $str_form_method, $bool_enable_upload);
     }
 

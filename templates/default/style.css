@@ -262,6 +262,13 @@ div.tabs
   border-spacing: 0;
 }
 
+.datagrid-info {
+  border: 1px solid #999;
+  border-bottom: 0;
+  padding: 5px;
+  background: #fc0;
+}
+
 .datagrid-action {
   padding: 3px;
   border: 1px solid #999;

@@ -174,6 +174,7 @@ class Datagrid extends SQLgrid
 
         // final output
         $_output = '<form id="'.$this->table->tableName.'-form" name="'.$this->table->tableName.'-form" action="'.$this->actionURI.'" method="post">';
+        $_output .= '<div class="datagrid-info">Found <strong>'.$this->num_rows.'</strong> records. Currently displaying page <strong>'.$this->currentPage.'</strong> on total of '.$this->totalPage.' pages</div>';
         $_output .= $_action_bar_top;
         $_output .= $_datagrid;
         $_output .= $_action_bar;

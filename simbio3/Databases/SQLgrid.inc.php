@@ -55,6 +55,7 @@ abstract class SQLgrid
     public $sqlGroupBy = '';
     public $selectFlag = '';
     public $currentPage = 1;
+    public $totalPage = 1;
     public $hiddenFields = array();
     public $error = '';
     public $pagingHandler = 'Paging';
@@ -169,6 +170,9 @@ abstract class SQLgrid
         if ($this->num_rows < 1) {
             return;
         }
+
+        // get total page
+        $this->totalPage = ceil($this->num_rows/$this->numToShow);
 
         // check the query string and rebuild with urlencoded value
         $_url_query_str = Utility::rebuildURLQuery('', array('fld', 'dir'));

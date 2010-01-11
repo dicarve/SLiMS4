@@ -166,7 +166,8 @@ abstract class FormMaker
      * @return  string
      */
     public function startForm() {
-        return '<form name="'.$this->formName.'" id="'.$this->formName.'" '
+        $this->formName = strtolower(str_replace(' ', '-', $this->formName));
+        return '<form name="'.$this->formName.'-form" id="'.$this->formName.'-form" '
             .'method="'.$this->method.'" '
             .'action="'.$this->action.'" target="'.$this->submitTarget.'"'.($this->enableUpload?' enctype="multipart/form-data"':'').'>';
     }

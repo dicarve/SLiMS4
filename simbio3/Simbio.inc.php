@@ -621,7 +621,7 @@ class Simbio {
         $this->config['default_template'] = 'default';
         $this->config['default_admin_template'] = 'default';
         $this->config['locale'] = 'en_US';
-        $this->config['show_error'] = false;
+        $this->config['show_error'] = true;
 
         // merge config from external configuration
         $this->config = array_merge($this->config, $arr_config);
@@ -1170,7 +1170,10 @@ class Simbio {
      * @return  boolean
      */
     public function phpErrorHandler($errno, $errstr, $errfile, $errline) {
-        $this->errors[$errno] = array('code' => $errno, 'message' => $errstr.' at '.$errfile.' on line '.$errline);
+        $_ignored = array(E_STRICT, E_DEPRECATED);
+        if (!in_array($errno, $_ignored)) {
+            $this->errors[$errno] = array('code' => $errno, 'message' => $errstr.' at '.$errfile.' on line '.$errline);
+        }
         return true;
     }
 

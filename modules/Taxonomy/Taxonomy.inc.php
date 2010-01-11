@@ -159,6 +159,12 @@ class Taxonomy extends SimbioModel {
             $_datagrid->setActionOptions($_action_options);
             // set result ordering
             $_datagrid->setSQLOrder('taxonomy_name ASC');
+            // search criteria
+            if (isset($_GET['keywords'])) {
+                $_search = $simbio->filterizeSQLString($_GET['keywords'], true);
+                $_criteria = "taxonomy_name LIKE '$_search%' OR taxonomy_desc LIKE '$_search%'";
+                $_datagrid->setSQLCriteria($_criteria);
+            }
             // built the datagrid
             $_datagrid->create($this->global['db_prefix'].'taxonomy');
 
@@ -278,36 +284,72 @@ class Taxonomy extends SimbioModel {
      * @return  void
      */
     public function update(&$simbio, $str_args) {
-        $_taxonomy_id = (integer)$str_args;
-        // get record data
-        $_rec = $this->getRecords($simbio, array('taxonomy_id' => $_taxonomy_id));
-        if (!$_rec) {
-            $simbio->addError('RECORD_NOT_FOUND', __("Taxonomy record not found!"));
-            return;
-        }
-        // create form
-        $_form = new FormOutput('form', 'index.php?p=taxonomy/save', 'post');
-        $_form->submitName = 'update';
-        $_form->submitValue = __('Update');
-        $_form->submitAjax = true;
-        $_form->disabled = true;
-        $_form->formInfo = '<div class="form-update-buttons"><a href="#" class="form-unlock">'.__('Unlock Form').'</a>'
-            .' <a href="#" class="form-cancel">'.__('Cancel').'</a>'
-            .'</div><hr size="1" />';
-        // auto generate form
-        $_elms = $this->autoGenerateForm($simbio);
-        // add form and set form field value
-        foreach ($_elms as $_elm) {
-            foreach ($_rec[0] as $_field => $_value) {
-                if ($_elm['id'] == $_field) {
-                    $_elm['value'] = $_value;
-                    $_form->add($_elm);
+        if (stripos($str_args, 'term/') !== false) {
+            $_term_id = (integer)str_replace('term/', '', $str_args);
+            // get record data
+            $this->dbTable = 'taxonomy_term';
+            $this->dbFields = array(); $this->autoGenerateFields($simbio);
+            $_rec = $this->getRecords($simbio, array('term_id' => $_term_id));
+            if (!$_rec) {
+                $simbio->addError('RECORD_NOT_FOUND', __("Taxonomy record not found!"));
+                return;
+            }
+            // create form
+            $_form = new FormOutput('form', 'index.php?p=taxonomy/save/term', 'post');
+            $_form->submitName = 'update';
+            $_form->submitValue = __('Update');
+            $_form->submitAjax = true;
+            $_form->disabled = true;
+            $_form->formInfo = '<div class="form-update-buttons"><a href="#" class="form-unlock">'.__('Unlock Form').'</a>'
+                .' <a href="#" class="form-cancel">'.__('Cancel').'</a>'
+                .'</div><hr size="1" />';
+            // auto generate form
+            $_elms = $this->autoGenerateForm($simbio);
+            // add form and set form field value
+            foreach ($_elms as $_elm) {
+                foreach ($_rec[0] as $_field => $_value) {
+                    if ($_elm['id'] == $_field) {
+                        $_elm['value'] = $_value;
+                        $_form->add($_elm);
+                    }
                 }
             }
+            // add update ID
+            $_form->removeElement('taxonomy_id');
+            $_form->add(array('id' => 'updateID', 'type' => 'hidden', 'value' => $_term_id));
+            $simbio->addInfo('UPDATE_RECORD_INFO', __('You are going to update Taxonomy Term'));
+        } else {
+            $_taxonomy_id = (integer)$str_args;
+            // get record data
+            $_rec = $this->getRecords($simbio, array('taxonomy_id' => $_taxonomy_id));
+            if (!$_rec) {
+                $simbio->addError('RECORD_NOT_FOUND', __("Taxonomy record not found!"));
+                return;
+            }
+            // create form
+            $_form = new FormOutput('form', 'index.php?p=taxonomy/save', 'post');
+            $_form->submitName = 'update';
+            $_form->submitValue = __('Update');
+            $_form->submitAjax = true;
+            $_form->disabled = true;
+            $_form->formInfo = '<div class="form-update-buttons"><a href="#" class="form-unlock">'.__('Unlock Form').'</a>'
+                .' <a href="#" class="form-cancel">'.__('Cancel').'</a>'
+                .'</div><hr size="1" />';
+            // auto generate form
+            $_elms = $this->autoGenerateForm($simbio);
+            // add form and set form field value
+            foreach ($_elms as $_elm) {
+                foreach ($_rec[0] as $_field => $_value) {
+                    if ($_elm['id'] == $_field) {
+                        $_elm['value'] = $_value;
+                        $_form->add($_elm);
+                    }
+                }
+            }
+            // add update ID
+            $_form->add(array('id' => 'updateID', 'type' => 'hidden', 'value' => $_taxonomy_id));
+            $simbio->addInfo('UPDATE_RECORD_INFO', __('You are going to update Taxonomy record'));
         }
-        // add update ID
-        $_form->add(array('id' => 'updateID', 'type' => 'hidden', 'value' => $_taxonomy_id));
-        $simbio->addInfo('UPDATE_RECORD_INFO', __('You are going to update Taxonomy record'));
         $simbio->loadView($_form, 'TAXONOMY_FORM');
     }
 
@@ -331,6 +373,7 @@ class Taxonomy extends SimbioModel {
                     $simbio->dbDelete('term_id='.$_rec_ID, 'taxonomy_term');
                 }
             }
+            $simbio->loadView('<script type="text/javascript">jQuery.ajaxPrevious();</script>', 'CLOSURE');
         } else {
             if (isset($_POST['record'])) {
                 // convert scalar var to array var
@@ -361,22 +404,27 @@ class Taxonomy extends SimbioModel {
     public function save(&$simbio, $str_args) {
         if ($str_args == 'term') {
             $_data['term'] = $simbio->filterizeSQLString($_POST['term'], true);
-            $_data['term_desc'] = $simbio->filterizeSQLString($_POST['term_desc'], true);
-            $_data['taxonomy_id'] = (integer)$_POST['taxonomy_id'];
+            $_data['term_notes'] = $simbio->filterizeSQLString($_POST['term_notes'], true);
             $_data['input_date'] = date('Y-m-d h:i:s');
             $_data['last_update'] = date('Y-m-d h:i:s');
-            if (isset($_POST['update'])) {
+            $_on_update = isset($_POST['update']);
+            if ($_on_update) {
                 unset($_data['input_date']);
                 $_id = (integer)$_POST['updateID'];
                 $_update = $simbio->dbUpdate($_data, 'taxonomy_term', 'term_id='.$_id);
-            } else {
+            } else if (isset($_POST['add'])) {
+                $_data['taxonomy_id'] = (integer)$_POST['taxonomy_id'];
                 $_update = $simbio->dbInsert($_data, 'taxonomy_term');
             }
             if (!$_update) {
                 $simbio->addError('RECORD_UPDATE_ERROR', 'Failed to update record for Taxonomy Term data. Please contact your system administrator!');
                 return;
             }
-            $simbio->loadView('<script type="text/javascript">top.location.href = \'index.php?p=admin/taxonomy/manage/'.$_data['taxonomy_id'].'\';</script>');
+            if ($_on_update) {
+                $simbio->loadView('<script type="text/javascript">jQuery.ajaxPrevious();</script>', 'CLOSURE');
+            } else {
+                $simbio->loadView('<script type="text/javascript">jQuery(\'#admin-main-content\').load(\'index.php?p=taxonomy/manage/'.$_data['taxonomy_id'].'\');</script>', 'CLOSURE');
+            }
         } else {
             $_data['taxonomy_name'] = $simbio->filterizeSQLString($_POST['taxonomy_name'], true);
             $_data['taxonomy_desc'] = $simbio->filterizeSQLString($_POST['taxonomy_desc'], true);
@@ -386,14 +434,14 @@ class Taxonomy extends SimbioModel {
                 unset($_data['input_date']);
                 $_id = (integer)$_POST['updateID'];
                 $_update = $simbio->dbUpdate($_data, 'taxonomy', 'taxonomy_id='.$_id);
-            } else {
+            } else if (isset($_POST['add'])) {
                 $_update = $simbio->dbInsert($_data, 'taxonomy');
             }
             if (!$_update) {
                 $simbio->addError('RECORD_UPDATE_ERROR', 'Failed to update record for Taxonomy data. Please contact your system administrator!');
                 return;
             }
-            $simbio->loadView('<script type="text/javascript">top.location.href = \'index.php?p=admin/taxonomy\';</script>');
+            $simbio->loadView('<script type="text/javascript">top.location.href = \'index.php?p=admin/taxonomy\';</script>', 'CLOSURE');
         }
     }
 }

@@ -41,7 +41,7 @@ jQuery.fn.registerAdminEvents = function() {
         parentForm.find('.required').each( function() {
             var elm = jQuery(this);
             if (!elm.val()) {
-                alert('Field marked required (*) must be filled/can\'t be left empty!'+"\n"+'Please fill with appropriate value!');
+                alert('Field marked with (*) must be filled/can\'t be left empty!'+"\n"+'Please fill with appropriate value!');
                 elm.css({'border' : '2px solid #f00'});
                 validated = false;
                 return;
@@ -58,7 +58,7 @@ jQuery.fn.registerAdminEvents = function() {
         var formURI = parentForm.attr('action');
         var formMethod = parentForm.attr('method');
         // create AJAX request
-        jQuery('#admin-main-content').simbioAJAX(formURI, {addData: formData, method: formMethod});
+        jQuery(container[0]).simbioAJAX(formURI, {addData: formData, method: formMethod});
     });
 
     // unlock form button
@@ -90,8 +90,24 @@ jQuery.fn.registerAdminEvents = function() {
             var formData = parentForm.serialize();
             var formMethod = parentForm.attr('method');
             // create AJAX request
-            jQuery('#admin-main-content').simbioAJAX('index.php?p=' + actionOptionVal, {addData: formData, method: formMethod});
+            jQuery(container[0]).simbioAJAX('index.php?p=' + actionOptionVal, {addData: formData, method: formMethod});
         }
+    });
+
+    // search form action
+    container.find('input#search').unbind('click').click( function(evt) {
+        evt.preventDefault();
+        // get parent form
+        var parentForm = jQuery(this).parents('form');
+        // check keyword
+        if (!parentForm.find('#keywords').val()) {
+            alert('Please supply one or more keyword(s) to search!');
+            return;
+        }
+        var formData = parentForm.serialize(); formData += '&'+jQuery(this).attr('name')+'='+jQuery(this).attr('value');
+        var formMethod = parentForm.attr('method');
+        // create AJAX request
+        jQuery(container[0]).simbioAJAX('index.php', {addData: formData, method: formMethod});
     });
 
     return container;

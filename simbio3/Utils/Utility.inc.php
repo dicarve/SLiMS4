@@ -33,12 +33,12 @@ class Utility {
     {
         $_block;
         ob_start();
-	echo '<div class="block"'.( $str_block_ID?' id="'.$str_block_ID.'"':'' ).'>'."\n";
+    echo '<div class="block"'.( $str_block_ID?' id="'.$str_block_ID.'"':'' ).'>'."\n";
         if ($str_block_title) { echo '<div class="block-title">'.$str_block_title.'</div>'."\n"; }
         echo '<div class="block-content">'."\n";
         echo $str_block_content;
-	echo '</div>'."\n";
-	echo '</div>'."\n";
+    echo '</div>'."\n";
+    echo '</div>'."\n";
         $_block = ob_get_clean();
         return $_block;
     }
@@ -148,7 +148,13 @@ class Utility {
             if (in_array($_param_name, $arr_excluded_param)) {
                 continue;
             }
-            $_query_string .= $_param_name.'='.urlencode($_param_value).'&';
+            if (is_array($_param_value)) {
+                foreach ($_param_value as $_each_val) {
+                    $_query_string .= $_param_name.'[]='.urlencode($_each_val).'&';
+                }
+            } else {
+                $_query_string .= $_param_name.'='.urlencode($_param_value).'&';
+            }
         }
 
         return $_query_string;

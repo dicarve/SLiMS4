@@ -10,7 +10,7 @@ jQuery.extend({
     addAjaxHistory: function(strURL, strElement) {
         jQuery.ajaxHistory.unshift({url: strURL, elmt: strElement});
         // delete the last element
-        if (jQuery.ajaxHistory.length > 10) {
+        if (jQuery.ajaxHistory.length > 3) {
             jQuery.ajaxHistory.pop();
         }
     },
@@ -21,13 +21,15 @@ jQuery.extend({
         var moveBack = 1;
         if (arguments[0] != undefined) {
             moveBack = arguments[0];
-        } else if (moveBack > jQuery.ajaxHistory.length) {
+        }
+        if (moveBack > jQuery.ajaxHistory.length) {
             moveBack = 1;
-        } else if (jQuery.ajaxHistory.length == 1) {
+        }
+        if (jQuery.ajaxHistory.length == 1) {
             top.location.href = location.pathname + location.search;
             return;
         }
-        jQuery(jQuery.ajaxHistory[moveBack].elmt).simbioAJAX(jQuery.ajaxHistory[moveBack].url);
+        jQuery(jQuery.ajaxHistory[moveBack].elmt).load(jQuery.ajaxHistory[moveBack].url);
     }
 });
 
@@ -40,13 +42,12 @@ jQuery.extend({
  */
 jQuery.fn.simbioAJAX = function(strURL, params)
 {
-    options = {
+    var options = {
         method: 'get',
         insertMode: 'replace',
-        addData: {},
+        addData: '',
         returnType: 'html',
-        loadingMessage: 'LOADING CONTENT... PLEASE WAIT'
-    };
+        loadingMessage: 'LOADING CONTENT... PLEASE WAIT' };
     jQuery.extend(options, params);
 
     var ajaxContainer = $(this);
@@ -54,19 +55,28 @@ jQuery.fn.simbioAJAX = function(strURL, params)
     // callbacks set
     if (ajaxContainer.find('#loading').length < 1) {
         // create loading element dinamically
-        ajaxContainer.prepend('<div style="display: none; position: absolute: top: 0; left: 0; padding: 5px; background: #fc0; font-weight: bold;" id="loading">LOADING CONTENT, PLEASE WAIT...</div>');
+        ajaxContainer.prepend('<div style="display: none; position: absolute: top: 0; left: 0; padding: 5px; background: #fc0; font-weight: bold;" id="loading"></div>');
     }
     $("#loading").html(options.loadingMessage);
     $("#loading").ajaxStart(function(){ $(this).fadeIn(500); });
     $("#loading").ajaxSuccess(function(){
         $(this).html('<div>REQUEST COMPLETED!</div>');
-        var historyURL = strURL;
-        if (strURL.indexOf('?', 0) > -1 && options.method == 'get') {
-            historyURL += '&' + options.addData;
-        } else {
-            historyURL += '?' + options.addData;
+        // no history on post AJAX request
+        if (options.method != 'post') {
+            var historyURL = strURL;
+            if (options.addData.length > 0) {
+                var addParam = options.addData;
+                if (Array.prototype.isPrototypeOf(options.addData)) {
+                    addParam = jQuery.param(options.addData);
+                }
+                if (historyURL.indexOf('?', 0) > -1) {
+                    historyURL += '&' + addParam;
+                } else {
+                    historyURL += '?' + addParam;
+                }
+            }
+            jQuery.addAjaxHistory(historyURL, ajaxContainer[0]);
         }
-        jQuery.addAjaxHistory(historyURL, ajaxContainer[0]);
     });
     $("#loading").ajaxStop(function(){ $(this).fadeOut(2000); });
     $("#loading").ajaxError(function(request, settings){ $(this).append("<div class=\"error\">Error requesting page : " + settings.url + "</div>");})
