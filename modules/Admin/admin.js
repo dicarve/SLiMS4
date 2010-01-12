@@ -2,9 +2,17 @@
  * JQuery method to bind all Admin module related event
  */
 jQuery.fn.registerAdminEvents = function() {
+    // cache container
     var container = jQuery(this);
+
+    var headerBlock = jQuery('.header-block').clone(true); jQuery('.header-block').remove();
+    if (headerBlock.length > 1) {
+        container.before(headerBlock[1]);
+    } else { container.before(headerBlock[0]); }
+
+
     // change all anchor behaviour to AJAX in main content
-    container.find('a').not('.no-ajax').click(function(evt) {
+    container.parent().find('a').not('.no-ajax').click(function(evt) {
         evt.preventDefault();
         // get anchor href
         var url = jQuery(this).attr('href');
@@ -12,9 +20,9 @@ jQuery.fn.registerAdminEvents = function() {
         container.simbioAJAX(url, {addData: {ajaxload: 1}});
     });
 
-    // set simbioTable to all table with class datagrid
-    if (container.find('.datagrid').length > 0) {
-        jQuery('.datagrid').simbioTable();
+    // set all table with class datagrid
+    container.find('table.datagrid').each( function() {
+        jQuery(this).simbioTable();
         // register uncheck click event
         jQuery('.uncheck-all').click(function() {
             jQuery.unCheckAll('.datagrid');
@@ -23,7 +31,7 @@ jQuery.fn.registerAdminEvents = function() {
         jQuery('.check-all').click(function() {
             jQuery.checkAll('.datagrid');
         });
-    }
+    });
 
     // set all textarea to be resizeable
     container.find('textarea:not(.processed)').TextAreaResizer();
@@ -95,7 +103,7 @@ jQuery.fn.registerAdminEvents = function() {
     });
 
     // search form action
-    container.find('input#search').unbind('click').click( function(evt) {
+    container.parent().find('input#search').unbind('click').click( function(evt) {
         evt.preventDefault();
         // get parent form
         var parentForm = jQuery(this).parents('form');
