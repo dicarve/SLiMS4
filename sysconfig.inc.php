@@ -49,7 +49,7 @@ $config['default_module'] = 'Biblio';
 /**
  * Default template
  */
-$config['default_template'] = 'default';
+$config['template'] = 'default';
 
 /**
  * Admin template

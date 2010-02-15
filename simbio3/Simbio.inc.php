@@ -64,7 +64,7 @@ class Simbio {
     // header box
     public $headerBlockTitle = '';
     public $headerBlockMenu = array();
-    public $headerBlockForm = null;
+    public $headerBlockContent = null;
 
     /**
      * Simbio framework class constructor set to private to prevent instance creation
@@ -285,10 +285,7 @@ class Simbio {
             // concatenating column name
             $_str_columns .= ", `$column`";
             // concatenating value
-            if ($value == 'NULL' || $value === null) {
-                // if the value is NULL or string NULL
-                $_str_value .= ', NULL';
-            } else if (is_string($value)) {
+            if (is_string($value) && $value != 'NULL') {
                 if (preg_match("@^literal{.+}@i", $value)) {
                     $value = preg_replace("@literal{|}@i", '', $value);
                     $_str_value .= ", $value";
@@ -296,6 +293,9 @@ class Simbio {
                     // concatenating column value
                     $_str_value .= ", '$value'";
                 }
+            } else if ($value == 'NULL' || $value === null) {
+                // if the value is NULL or string NULL
+                $_str_value .= ', NULL';
             } else {
                 // if the value is an integer or unknown data type
                 $_str_value .= ", $value";
@@ -337,15 +337,15 @@ class Simbio {
             foreach ($arr_data as $column => $new_value) {
                 if ($new_value == '') {
                     $_set .= ", $column = ''";
-                } else if ($new_value === 'NULL' OR $new_value == null) {
-                    $_set .= ", $column = NULL";
-                } else if (is_string($new_value)) {
+                } else if (is_string($new_value) && $new_value != 'NULL') {
                     if (preg_match("/^literal{.+}/i", $new_value)) {
                         $new_value = preg_replace("/literal{|}/i", '', $new_value);
                         $_set .= ", `$column` = $new_value";
                     } else {
                         $_set .= ", `$column` = '$new_value'";
                     }
+                } else if ($new_value === 'NULL' OR $new_value == null) {
+                    $_set .= ", `$column` = NULL";
                 } else {
                     $_set .= ", `$column` = $new_value";
                 }
@@ -386,6 +386,7 @@ class Simbio {
      */
     public function dbQuery($str_query) {
         $this->lastQuery = Simbio::rewriteQuery($str_query, $this->config['db_prefix']);
+        // echo '<br />'.$this->lastQuery;
         return $this->dbc->query($this->lastQuery);
     }
 
@@ -410,6 +411,9 @@ class Simbio {
     private function generateView() {
         $_view_output = '';
         foreach ($this->views as $_vid => $_view) {
+            if ($_vid == 'CLOSURE') {
+                continue;
+            }
             if (is_string($_view)) {
                 $_view_output .= $_view;
             } else if ($_view instanceof FormOutput) {
@@ -420,8 +424,6 @@ class Simbio {
                 $_view_output .= $_view->build();
             } else if ($_view instanceof Table) {
                 $_view_output .= $_view->printTable();
-            } else {
-                $_view_output .= (string)$_view;
             }
         }
         return $_view_output;
@@ -482,26 +484,28 @@ class Simbio {
      * @return  string
      */
     private function headerBlock() {
-        if ($this->headerBlockMenu || $this->headerBlockForm) {
-            $str_block_name = strtolower(str_replace(' ', '-', $this->headerBlockTitle));
-
-            $_block = '';
-            // menu
-            if ($this->headerBlockMenu) {
-                $_block .= '<div class="header-menu">';
-                foreach ($this->headerBlockMenu as $_menu) {
-                    $_block .= '<a href="index.php?p='.$_menu['link'].'"'.( isset($_menu['class'])?' class="'.$_menu['class'].'"':'' ).' title="'.$_menu['desc'].'">'.$_menu['title'].'</a>';
-                }
-                $_block .= '</div>';
-            }
-            // quick search
-            if ($this->headerBlockForm instanceof FormOutput) {
-                $_block .= $this->headerBlockForm->buildSimple();
-            }
-
-            return '<div class="header-block" id="'.$str_block_name.'">'.Utility::createBlock($_block, $this->headerBlockTitle).'</div>'."\n";
+        if (trim($this->headerBlockTitle) == '') {
+            return;
         }
-        return '';
+        $str_block_name = strtolower(str_replace(' ', '-', $this->headerBlockTitle));
+        $_block = '';
+
+        // menu
+        if ($this->headerBlockMenu) {
+            $_block .= '<div class="header-menu">';
+            foreach ($this->headerBlockMenu as $_menu) {
+                $_block .= '<a href="index.php?p='.$_menu['link'].'"'.( isset($_menu['class'])?' class="'.$_menu['class'].'"':'' ).' title="'.$_menu['desc'].'">'.$_menu['title'].'</a>';
+            }
+            $_block .= '</div>';
+        }
+        // quick search
+        if ($this->headerBlockContent instanceof FormOutput) {
+            $_block .= $this->headerBlockContent->buildSimple();
+        } else { $_block .= $this->headerBlockContent; }
+
+        $_header_block = '<div class="header-block" id="'.$str_block_name.'">'.Utility::createBlock($_block, $this->headerBlockTitle).'</div>'."\n";
+
+        return $_header_block;
     }
 
 
@@ -618,8 +622,8 @@ class Simbio {
         $this->config['default_module'] = 'biblio';
         $this->config['db_uri'] = 'mysqli://root:@localhost:3306/simbiodb';
         $this->config['db_prefix'] = 'simbio_';
-        $this->config['default_template'] = 'default';
-        $this->config['default_admin_template'] = 'default';
+        $this->config['template'] = 'default';
+        $this->config['admin_template'] = 'default';
         $this->config['locale'] = 'en_US';
         $this->config['show_error'] = true;
 
@@ -627,6 +631,7 @@ class Simbio {
         $this->config = array_merge($this->config, $arr_config);
 
         $this->viewsConfig['load_type'] = 'full';
+        $this->viewsConfig['content_type'] = 'text/html';
         // turn off/on all errors
         @ini_set('display_errors', $this->config['show_error']);
         // check magic quote gpc
@@ -758,7 +763,7 @@ class Simbio {
      * @return  array
      */
     private function loadTemplateConfig() {
-        $_file = TEMPLATES_BASE.$this->config['default_template'].DSEP.'tconf.ini';
+        $_file = TEMPLATES_BASE.$this->config['template'].DSEP.'tconf.ini';
         if (file_exists($_file)) {
             $_tconf = parse_ini_file($_file, true);
             return $_tconf;
@@ -812,8 +817,8 @@ class Simbio {
         @ini_set('session.use_cookies', true);
         // use more secure session ids
         @ini_set('session.hash_function', 1);
-        // some pages (e.g. stylesheet) may be cached on clients, but not in shared proxy servers
-        @session_cache_limiter('private');
+        // disable caching
+        @session_cache_limiter('nocache');
         // set session name and start the session
         @session_name(APP_SESSION_COOKIE_NAME);
         // set session cookies params
@@ -925,7 +930,7 @@ class Simbio {
         // shortcut icon
         $webicon = 'webicon.png';
         // logo
-        $_logo = isset($this->config['logo'])?isset($this->config['logo']):TEMPLATES_WEB_BASE.$this->config['default_template'].'/logo.png';
+        $_logo = isset($this->config['logo'])?isset($this->config['logo']):TEMPLATES_WEB_BASE.$this->config['template'].'/logo.png';
         $app_logo = '<a href="'.APP_WEB_BASE.'" id="logo-link"><img src="'.$_logo.'" border="0" id="logo" /></a>';
         // application main title
         $app_title = '<a href="'.APP_WEB_BASE.'" id="app-title-link"><span>'.$this->config['app_title'].'</span></a>';
@@ -934,7 +939,8 @@ class Simbio {
         // main application information box
         $main_info = '';
         // main content
-        $main_content = $this->headerBlock();
+        // add content header
+        $main_content = (!isset($_GET['noheader']) && $this->viewsConfig['content_type'] == 'text/html')?$this->headerBlock():'';
         // main menu links
         $primary_links = '';
         // navigation links
@@ -947,12 +953,12 @@ class Simbio {
         if ($_tconf) {
             if (isset($_tconf['css']['cssfile']) && $_tconf['css']) {
                 foreach($_tconf['css']['cssfile'] as $_cssfile) {
-                    $this->css[] = TEMPLATES_WEB_BASE.$this->config['default_template'].'/'.$_cssfile;
+                    $this->css[] = TEMPLATES_WEB_BASE.$this->config['template'].'/'.$_cssfile;
                 }
             }
             if (isset($_tconf['js']['jsfile']) && $_tconf['js']) {
                 foreach($_tconf['js']['jsfile'] as $_jsfile) {
-                    $this->javascripts[] = TEMPLATES_WEB_BASE.$this->config['default_template'].'/'.$_jsfile;
+                    $this->javascripts[] = TEMPLATES_WEB_BASE.$this->config['template'].'/'.$_jsfile;
                 }
             }
             if (isset($_tconf['text_direction'])) {
@@ -963,10 +969,13 @@ class Simbio {
             }
         }
 
-
+        // disable cache
+        header('Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0');
+        header('Expires: Sat, 26 Jul 1997 05:00:00 GMT');
+        header('Pragma: no-cache');
         // check content type
         // set header
-        if (isset($this->viewsConfig['content_type'])) {
+        if ($this->viewsConfig['content_type'] != 'text/html') {
             header('Content-type: '.$this->viewsConfig['content_type']);
         } else {
             header('Content-type: text/html');
@@ -1000,7 +1009,7 @@ class Simbio {
 
         // check load type
         if ($this->viewsConfig['load_type'] != 'notemplate') {
-            $_template = $this->config['default_template'];
+            $_template = $this->config['template'];
             $_template_file = 'index_template.inc.php';
             if (strtolower($this->currentModule) == 'admin') {
                 $_template = $this->config['admin_template'];
@@ -1062,13 +1071,9 @@ class Simbio {
             // load the template
             require TEMPLATES_BASE.$_template.DSEP.$_template_file;
         } else {
-            // load CSS and javascript links
-            $css = $this->loadCSS();
-            $javascripts = $this->loadJS();
-            $main_content .= $this->generateView();
-
             echo $main_info;
             // only output main content
+            $main_content .= $this->generateView();
             echo $main_content;
             echo $closure;
         }

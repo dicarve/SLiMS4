@@ -1,5 +1,5 @@
 /**
- * Arie Nugraha 2009
+ * Arie Nugraha 2010
  * Simbio AJAX related functions
  *
  * Require : jQuery library
@@ -78,8 +78,8 @@ jQuery.fn.simbioAJAX = function(strURL, params)
             jQuery.addAjaxHistory(historyURL, ajaxContainer[0]);
         }
     });
-    $("#loading").ajaxStop(function(){ $(this).fadeOut(2000); });
-    $("#loading").ajaxError(function(request, settings){ $(this).append("<div class=\"error\">Error requesting page : " + settings.url + "</div>");})
+    $("#loading").ajaxStop(function(){ $(this).unbind().fadeOut(500); });
+    $("#loading").ajaxError(function(event, request, settings){ $(this).append("<div class=\"error\">Error requesting page : <strong>" + settings.url + "</strong></div>");})
 
     // send AJAX request
     var ajaxResponse = $.ajax({

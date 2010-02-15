@@ -42,7 +42,7 @@ class Admin extends SimbioModel {
      * @param   object      $simbio: Simbio framework object
      * @return  array       an array of module information containing
      */
-    public function moduleInfo(&$simbio) {
+    public static function moduleInfo(&$simbio) {
 
     }
 
@@ -54,31 +54,7 @@ class Admin extends SimbioModel {
      * @param   object      $simbio: Simbio framework object
      * @return  array       an array of privileges for this module
      */
-    public function modulePrivileges(&$simbio) {
-
-    }
-
-
-    /**
-     * Method to add module data
-     *
-     * @param   object      $simbio: Simbio framework object
-     * @param   string      $str_args: method main argument
-     * @return  void
-     */
-    public function add(&$simbio, $str_args) {
-
-    }
-
-
-    /**
-     * Configuration for Biblio module
-     *
-     * @param   object      $simbio: Simbio framework object
-     * @param   string      $str_args: method main argument
-     * @return  void
-     */
-    public function config(&$simbio, $str_args) {
+    public static function modulePrivileges(&$simbio) {
 
     }
 
@@ -129,22 +105,26 @@ class Admin extends SimbioModel {
      */
     public function init(&$simbio, $str_current_module, $str_current_method, $str_args) {
         $this->modules = $simbio->getModules();
+        // admin navigation menu showed only on admin index/homepage
+        if ($str_current_module == 'admin' && $str_current_method == 'index') {
+            foreach ($this->menu($simbio, 'navigation') as $_nav_section_name => $_nav_section) {
+                foreach ($_nav_section as $_nav_menu) {
+                    $simbio->addNavigationMenu($_nav_section_name, $_nav_menu);
+                }
+            }
+        }
         // add main menu
         foreach ($this->modules as $_module_name => $_module) {
             foreach ($_module->menu($simbio, 'main') as $_menu) {
                 $simbio->addMainMenu($_menu);
             }
-        }
-        // navigation menu
-        $str_current_module = strtolower($str_current_module);
-        if (isset($this->modules[$str_current_method])) {
-            $_curr_module = $this->modules[$str_current_method];
-        } else {
-            $_curr_module = $this;
-        }
-        foreach ($_curr_module->menu($simbio, 'navigation') as $_nav_section_name => $_nav_section) {
-            foreach ($_nav_section as $_nav_menu) {
-                $simbio->addNavigationMenu($_nav_section_name, $_nav_menu);
+            // navigation menu for non-admin modules
+            if ($_module_name != 'admin') {
+                foreach ($_module->menu($simbio, 'navigation', $str_current_module, $str_current_method) as $_nav_section_name => $_nav_section) {
+                    foreach ($_nav_section as $_nav_menu) {
+                        $simbio->addNavigationMenu($_nav_section_name, $_nav_menu);
+                    }
+                }
             }
         }
         // add Admin module javascript library
@@ -174,9 +154,10 @@ class Admin extends SimbioModel {
         if ($str_menu_type == 'main') {
             return $_menu;
         } else {
-            $_menu['Quick Shortcut'][] = array('link' => 'admin/system', 'name' => __('Preferences'), 'description' => __('Application wide configuration settings/preferences'));
-            $_menu['Quick Shortcut'][] = array('link' => 'user/profile', 'name' => __('User Profile'), 'description' => __('View and change your user profiles such as login username and password'));
-            $_menu['Quick Shortcut'][] = array('link' => 'system/backup', 'name' => __('Backup'), 'description' => __('View and create database backup'));
+            $_menu['Shortcut'][] = array('link' => 'admin/system', 'name' => __('Preferences'), 'description' => __('Application wide configuration settings/preferences'));
+            $_menu['Shortcut'][] = array('link' => 'user/profile', 'name' => __('User Profile'), 'description' => __('View and change your user profiles such as login username and password'));
+            $_menu['Shortcut'][] = array('link' => 'system/backup', 'name' => __('Backup'), 'description' => __('View and create database backup'));
+            $_menu['Shortcut'][] = array('link' => 'user/logout', 'name' => __('LOGOUT'), 'description' => __('Logging Out from Admin area'));
         }
         return $_menu;
     }

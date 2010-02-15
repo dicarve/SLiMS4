@@ -71,6 +71,9 @@ class FormOutput extends FormMaker
      */
     public function build()
     {
+        if ($this->submitIframe) {
+            $this->submitTarget = 'submitExec';
+        }
         $_buffer = '<div class="form-wrapper '.$this->formName.'" id="'.$this->formName.'">'."\n";
         $_buffer .= parent::startForm();
         if ($this->formInfo) {
@@ -80,6 +83,7 @@ class FormOutput extends FormMaker
         foreach ($this->elements as $_form_element) {
             // check for fieldset
             if (is_subclass_of($_form_element, 'FormElement')) {
+                if ($this->disabled) { $_form_element->disabled = true; }
                 $_buffer .= '<div class="form-element-wrapper">'."\n";
                 $_buffer .= '<label class="form-element-label" for="'.$_form_element->name.'">'.$_form_element->label.'</label>'."\n";
                 $_buffer .= '<div class="form-element-content">'.$_form_element->out().'</div>'."\n";
@@ -123,10 +127,6 @@ class FormOutput extends FormMaker
             }
         }
         $_buffer .= parent::endForm();
-        // disable form
-        if ($this->disabled) {
-            $_buffer .= '<script type="text/javascript">jQuery(\'#'.$this->formName.'\').disableForm()</script>';
-        }
         $_buffer .= '</div>';
 
         return $_buffer;
@@ -140,6 +140,9 @@ class FormOutput extends FormMaker
      */
     public function buildSimple()
     {
+        if ($this->submitIframe) {
+            $this->submitTarget = 'submitExec';
+        }
         $_buffer = '<span class="simple-form-wrapper '.$this->formName.'" id="'.$this->formName.'">'."\n";
         $_buffer .= parent::startForm();
         if ($this->formInfo) {
@@ -149,6 +152,7 @@ class FormOutput extends FormMaker
         foreach ($this->elements as $_form_element) {
             // check for fieldset
             if (is_subclass_of($_form_element, 'FormElement')) {
+                if ($this->disabled) { $_form_element->disabled = true; }
                 $_buffer .= '<span class="form-element-wrapper">';
                 $_buffer .= '<label class="form-element-label" for="'.$_form_element->name.'">'.$_form_element->label.'</label>: ';
                 $_buffer .= '<span class="form-element-content">'.$_form_element->out().'</span>';
@@ -162,10 +166,6 @@ class FormOutput extends FormMaker
         // submit button
         $_buffer .= '<span class="form-buttons"><input type="submit" name="'.$this->submitName.'" id="'.$this->submitName.'" class="simple-form-submit" value="'.$this->submitValue.'" /></span>'."\n";
         $_buffer .= parent::endForm();
-        // disable form
-        if ($this->disabled) {
-            $_buffer .= '<script type="text/javascript">jQuery(\'#'.$this->formName.'\').disableForm()</script>';
-        }
         $_buffer .= '</span>';
 
         return $_buffer;

@@ -50,14 +50,14 @@ class FormText extends FormElement
 
         // checking element type
         if ($this->type == 'textarea') {
-            $_buffer .= '<textarea class="'.( $this->cssClass?$this->cssClass.' '.$_required:$_required ).'" name="'.$this->name.'" id="'.$this->name.'" '.$this->attribute.''.$_disabled.'>';
+            $_buffer .= '<textarea class="'.( $this->cssClass?trim($this->cssClass.' '.$_required):$_required ).'" name="'.$this->name.'" id="'.$this->name.'" '.$this->attribute.''.$_disabled.'>';
             $_buffer .= $this->value;
             $_buffer .= '</textarea>'."\n";
         } else if (stripos($this->type, 'date', 0) !== false) {
             $_buffer .= '<input class="dateInput'.( $this->cssClass?' '.$this->cssClass.' '.$_required:' '.$_required ).'" type="'.$this->type.'" name="'.$this->name.'" id="'.$this->name.'" ';
             $_buffer .= 'value="'.$this->value.'" '.$this->attribute.''.$_disabled.' />'."\n";
         } else {
-            $_buffer .= '<input class="'.( $this->cssClass?$this->cssClass.' '.$_required:$_required ).'" type="'.$this->type.'" name="'.$this->name.'" id="'.$this->name.'" ';
+            $_buffer .= '<input class="'.( $this->cssClass?trim($this->cssClass.' '.$_required):$_required ).'" type="'.$this->type.'" name="'.$this->name.'" id="'.$this->name.'" ';
             $_buffer .= 'value="'.$this->value.'" '.$this->attribute.''.$_disabled.' />'."\n";
         }
 

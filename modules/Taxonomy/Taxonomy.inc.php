@@ -28,8 +28,10 @@ class Taxonomy extends SimbioModel {
      * @param   object  $simbio: Simbio framework object
      * @return  array   an array of module information containing
      */
-    public function moduleInfo(&$simbio) {
-
+    public static function moduleInfo(&$simbio) {
+        return array('module-name' => 'Taxonomy',
+            'module-desc' => 'Create and manage master and hierarchical data to be used with other modules',
+            'module-depends' => array());
     }
 
 
@@ -40,7 +42,7 @@ class Taxonomy extends SimbioModel {
      * @param   object  $simbio: Simbio framework object
      * @return  array   an array of privileges for this module
      */
-    public function modulePrivileges(&$simbio) {
+    public static function modulePrivileges(&$simbio) {
 
     }
 
@@ -131,6 +133,44 @@ class Taxonomy extends SimbioModel {
 
 
     /**
+     * get taxonomy term list
+     *
+     * @param   object  $simbio: Simbio framework object
+     * @param   string  $str_args: method main argument
+     * @return  void
+     */
+    public function getTerms($simbio, $str_args) {
+        $_term = '%';
+        $_taxonomy = null;
+        // get taxonomy name
+        if ($str_args) {
+            $_taxonomy = $simbio->filterizeSQLstring($str_args, true);
+        }
+        // get search term
+        if (isset($_GET['search'])) {
+            $_search_text = $simbio->filterizeSQLstring($_GET['search'], true);
+            $_term = "%$_search_text%";
+        }
+
+        $_sql_str = 'SELECT `term_id` AS `listvalue`, `term` AS `listtext` FROM {taxonomy_term} AS t
+            LEFT JOIN {taxonomy} AS tx ON t.taxonomy_id=tx.taxonomy_id
+            WHERE `term` LIKE \''.$_term.'\''
+            .( $_taxonomy?' AND taxonomy_name=\''.$_taxonomy.'\'':'' ).' ORDER BY `term` ASC LIMIT 10';
+
+        $_q = $simbio->dbQuery($_sql_str);
+        $_terms = array();
+        while ($_d = $_q->fetch_assoc()) {
+            $_terms[] = $_d;
+        }
+        $simbio->setViewConfig('load_type', 'notemplate');
+        $simbio->setViewConfig('content_type', 'text/x-json');
+        // emptying closure
+        $simbio->loadView(null, 'CLOSURE');
+        $simbio->loadView(json_encode($_terms), 'Content');
+    }
+
+
+    /**
      * Default module page method
      * All module must have this method
      *
@@ -184,7 +224,7 @@ class Taxonomy extends SimbioModel {
             foreach ($_form_items as $_item) {
                 $_quick_search->add($_item);
             }
-            $simbio->headerBlockForm = $_quick_search;
+            $simbio->headerBlockContent = $_quick_search;
 
             // add to main content
             $simbio->loadView($_datagrid, 'TAXONOMY_LIST');
@@ -224,27 +264,35 @@ class Taxonomy extends SimbioModel {
         $_datagrid->setActionOptions($_action_options);
         // set result ordering
         $_datagrid->setSQLOrder('term ASC');
-        $_datagrid->setSQLCriteria('taxonomy_id='.$_taxonomy_id);
+        // search criteria
+        $_criteria = 'taxonomy_id='.$_taxonomy_id;
+        if (isset($_GET['keywords'])) {
+            $_search = $simbio->filterizeSQLString($_GET['keywords'], true);
+            $_criteria .= " AND term LIKE '%$_search%'";
+        }
+        $_datagrid->setSQLCriteria($_criteria);
         // built the datagrid
         $_datagrid->create($this->global['db_prefix'].'taxonomy_term');
 
-        // set header
-        $simbio->headerBlockTitle = $_taxonomy_d['taxonomy_desc'].' Taxonomy';
-        $simbio->headerBlockMenu = array(
-                array('class' => 'add', 'link' => 'taxonomy/add/term/'.$_taxonomy_id, 'title' => 'Add Taxonomy Term', 'desc' => 'Add new Taxonomy term'),
-                array('class' => 'list', 'link' => 'taxonomy/manage/'.$_taxonomy_id, 'title' => 'Taxonomy Term List', 'desc' => 'View list of existing Taxonomy terms')
-            );
-        // build search form
-        $_quick_search = new FormOutput('search', 'index.php', 'get');
-        $_quick_search->submitName = 'search';
-        $_quick_search->submitValue = __('Search');
-        // define form elements
-        $_form_items[] = array('id' => 'keywords', 'label' => __('Search '), 'type' => 'text', 'maxSize' => '200');
-        $_form_items[] = array('id' => 'p', 'type' => 'hidden', 'value' => 'taxonomy/manage/'.$_taxonomy_id);
-        foreach ($_form_items as $_item) {
-            $_quick_search->add($_item);
+        if (!isset($_GET['nohead'])) {
+            // set header
+            $simbio->headerBlockTitle = $_taxonomy_d['taxonomy_desc'].' Taxonomy';
+            $simbio->headerBlockMenu = array(
+                    array('class' => 'add', 'link' => 'taxonomy/add/term/'.$_taxonomy_id, 'title' => 'Add Taxonomy Term', 'desc' => 'Add new Taxonomy term'),
+                    array('class' => 'list', 'link' => 'taxonomy/manage/'.$_taxonomy_id, 'title' => 'Taxonomy Term List', 'desc' => 'View list of existing Taxonomy terms')
+                );
+            // build search form
+            $_quick_search = new FormOutput('search', 'index.php', 'get');
+            $_quick_search->submitName = 'search';
+            $_quick_search->submitValue = __('Search');
+            // define form elements
+            $_form_items[] = array('id' => 'keywords', 'label' => __('Search '), 'type' => 'text', 'maxSize' => '200');
+            $_form_items[] = array('id' => 'p', 'type' => 'hidden', 'value' => 'taxonomy/manage/'.$_taxonomy_id);
+            foreach ($_form_items as $_item) {
+                $_quick_search->add($_item);
+            }
+            $simbio->headerBlockContent = $_quick_search;
         }
-        $simbio->headerBlockForm = $_quick_search;
 
         // add to main content
         $simbio->loadView($_datagrid, 'TAXONOMY_LIST');
@@ -256,20 +304,24 @@ class Taxonomy extends SimbioModel {
      *
      * @param   object  $simbio: Simbio framework object
      * @param   string  $str_menu_type: value can be 'main' or 'navigation'
+     * @param   string  $str_current_module: current module called by framework
+     * @param   string  $str_current_method: current method of current module called by framework
      * @return  array
      */
-    public function menu(&$simbio, $str_menu_type = 'navigation') {
+    public function menu(&$simbio, $str_menu_type = 'navigation', $str_current_module = '', $str_current_method = '') {
         $_menu = array();
         if ($str_menu_type == 'main') {
             $_menu[] = array('link' => 'admin/taxonomy', 'name' => 'Taxonomy', 'description' => __('Manage hierarchical referencial data such as types, classification etc.'));
         } else {
-            $_menu['Manage'][] = array('link' => 'taxonomy/add', 'name' => __('Add Taxonomy'), 'description' => __('Add new taxonomy schema'));
-            $_menu['Manage'][] = array('link' => 'taxonomy', 'name' => __('Taxonomy List'), 'description' => __('List available taxonomy schema'));
-            // get taxonomy list from database
-            $_taxonomy_q = $simbio->dbQuery('SELECT * FROM {taxonomy} ORDER BY taxonomy_desc ASC');
-            while ($_taxonomy_d = $_taxonomy_q->fetch_assoc()) {
-                $_menu['Taxonomies'][] = array('link' => 'taxonomy/manage/'.$_taxonomy_d['taxonomy_id'],
-                    'name' => ucwords($_taxonomy_d['taxonomy_desc']), 'description' => $_taxonomy_d['taxonomy_desc']);
+            if ($str_current_module == 'admin' && $str_current_method == 'taxonomy') {
+                $_menu['Manage'][] = array('link' => 'taxonomy/add', 'name' => __('Add Taxonomy'), 'description' => __('Add new taxonomy schema'));
+                $_menu['Manage'][] = array('link' => 'taxonomy', 'name' => __('Taxonomy List'), 'description' => __('List available taxonomy schema'));
+                // get taxonomy list from database
+                $_taxonomy_q = $simbio->dbQuery('SELECT * FROM {taxonomy} ORDER BY taxonomy_desc ASC');
+                while ($_taxonomy_d = $_taxonomy_q->fetch_assoc()) {
+                    $_menu['Taxonomies'][] = array('link' => 'taxonomy/manage/'.$_taxonomy_d['taxonomy_id'],
+                        'name' => ucwords($_taxonomy_d['taxonomy_desc']), 'description' => $_taxonomy_d['taxonomy_desc']);
+                }
             }
         }
         return $_menu;
@@ -299,6 +351,7 @@ class Taxonomy extends SimbioModel {
             $_form->submitName = 'update';
             $_form->submitValue = __('Update');
             $_form->submitAjax = true;
+            $_form->includeReset = true;
             $_form->disabled = true;
             $_form->formInfo = '<div class="form-update-buttons"><a href="#" class="form-unlock">'.__('Unlock Form').'</a>'
                 .' <a href="#" class="form-cancel">'.__('Cancel').'</a>'
@@ -331,6 +384,7 @@ class Taxonomy extends SimbioModel {
             $_form->submitName = 'update';
             $_form->submitValue = __('Update');
             $_form->submitAjax = true;
+            $_form->includeReset = true;
             $_form->disabled = true;
             $_form->formInfo = '<div class="form-update-buttons"><a href="#" class="form-unlock">'.__('Unlock Form').'</a>'
                 .' <a href="#" class="form-cancel">'.__('Cancel').'</a>'

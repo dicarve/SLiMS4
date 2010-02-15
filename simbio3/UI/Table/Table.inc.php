@@ -39,11 +39,13 @@ class Table
     /**
      * Class Constructor
      *
-     * @param   string  $str_tableAttr
+     * @param   array  $arr_table_attr: an array containing table attributes
      */
-    public function __construct($str_table_attr = '')
+    public function __construct($arr_table_attr = '')
     {
-        $this->tableAttr = $str_table_attr;
+        if ($arr_table_attr && is_array($arr_table_attr)) {
+            $this->tableAttr = Utility::createHTMLAttribute($arr_table_attr);
+        }
     }
 
 
@@ -183,7 +185,7 @@ class Table
                 foreach ($_row->fields as $_field_idx => $_field) {
                     // header field
                     if ($_record_row == 0) {
-                        $_field->attr .= 'class="'.$this->tableName.'-head" '.$this->tableHeaderAttr;
+                        $_field->attr .= 'class="table-header '.$this->tableName.'-head" '.$this->tableHeaderAttr;
                     } else {
                         $_field->attr .= 'class="'.$this->tableName.'-content" ';
                     }

@@ -25,7 +25,7 @@ $long = 106.8023901;
 ?>
 <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=false"></script>
 <script type="text/javascript">
-function initialize() {
+var initialize = function() {
   var latlng = new google.maps.LatLng(<?php echo $lat . ',' . $long; ?>);
   var myOptions = {
     zoom: 14,
@@ -37,11 +37,11 @@ function initialize() {
   var marker = new google.maps.Marker({
       position: latlng,
       map: map,
-      title:"<?php echo $info; ?>"
+      title: '<?php echo $title; ?>'
     });
 }
 // initialize when document ready
-jQuery('document').ready(function() {
+jQuery(document).ready(function() {
   initialize();
 })
 </script>

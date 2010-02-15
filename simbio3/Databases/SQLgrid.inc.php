@@ -28,11 +28,11 @@ abstract class SQLgrid
      */
     private $objDB = false;
     private $gridRealQuery = false;
-    private $sqlString = false;
 
     /**
      * Protected properties
      */
+    protected $sqlString = false;
     protected $gridResultFields = array();
     protected $fieldNumericName = array();
     protected $gridResultRows = array();
@@ -206,19 +206,19 @@ abstract class SQLgrid
             foreach ($this->modifiedContent as $_mod_field_name => $_new_content) {
                 // change the value of modified column
                 if (isset($this->gridResultRows[$_result_row][$_mod_field_name])) {
-                    // run callback function php script if the string is embraced by "callback{*}"
+                    // run callback function or static method if the string is embraced by "callback{*}"
                     if (preg_match('@^callback\{.+?\}@i', $_new_content)) {
                         // strip the "callback{" and "}" string to empty string
                         $_callback_func = str_replace(array('callback{', '}'), '', $_new_content);
                         // check if the callback is a static class method
-                        if (stripos($_callback_func, ',', 1) !== false) {
-                            $_arr_callback = explode(',', $_callback_func, 2);
-                            $this->gridResultRows[$_result_row][$_mod_field_name] = call_user_func($_arr_callback, $this->objDB, $this->gridResultRows[$_result_row]);
+                        if (stripos($_callback_func, '::', 1) !== false) {
+                            $_arr_callback = explode('::', $_callback_func, 2);
+                            $this->gridResultRows[$_result_row][$_mod_field_name] = call_user_func($_arr_callback, $this->objDB, $this->gridResultRows[$_result_row], &$this);
                         } else {
                             // else it is ordinary user function
                             if (function_exists($_callback_func)) {
                                 // call the function
-                                $this->gridResultRows[$_result_row][$_mod_field_name] = call_user_func($_callback_func, $this->objDB, $this->gridResultRows[$_result_row]);
+                                $this->gridResultRows[$_result_row][$_mod_field_name] = call_user_func($_callback_func, $this->objDB, $this->gridResultRows[$_result_row], &$this);
                             } else { $this->gridResultRows[$_result_row][$_mod_field_name] = $_callback_func; }
                         }
                     } else {
@@ -309,7 +309,12 @@ abstract class SQLgrid
             foreach ($mix_field_list as $_alias => $_field) {
                 $_alias = is_string($_alias)?trim(str_replace('`', '', $_alias)):$_alias;
                 // store to class properties
-                $this->sqlColumn .= '`'.$_field.'`'.( is_int($_alias)?'':' AS `'.$_alias.'`' ).', ';
+                if (stripos($_field, 'expr{', 0) !== false) {
+                    $_field = str_ireplace(array('expr{', '}'), '', $_field);
+                    $this->sqlColumn .= $_field.( is_int($_alias)?'':' AS `'.$_alias.'`' ).', ';
+                } else {
+                    $this->sqlColumn .= '`'.$_field.'`'.( is_int($_alias)?'':' AS `'.$_alias.'`' ).', ';
+                }
                 // $this->sortColumn[trim($_column_alias)] = trim($_real_column);
                 $this->sortColumn[$_alias] = $_field;
             }

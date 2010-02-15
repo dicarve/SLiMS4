@@ -265,7 +265,7 @@ table {
   border: 1px solid #999;
   padding: 3px;
   padding-left: 53px;
-  margin-bottom: 3px;
+  margin: 3px;
   background: url(media/modules/default.png) no-repeat -5px -5px;
 }
 
@@ -324,4 +324,40 @@ table {
  */
 #taxonomy {
   background-image: url(media/modules/taxonomy.png);
+}
+
+#circulation {
+  background-image: url(media/modules/circulation.png);
+}
+
+#content {
+  background-image: url(media/modules/content.png);
+}
+
+#system-information {
+  background-image: url(media/modules/system-information.png);
+}
+
+#system-configuration, #configuration {
+  background-image: url(media/modules/system-configuration.png);
+}
+
+#membership {
+  background-image: url(media/modules/membership.png);
+}
+
+#modules {
+  background-image: url(media/modules/modules.png);
+}
+
+#modules {
+  background-image: url(media/modules/modules.png);
+}
+
+#user {
+  background-image: url(media/modules/user.png);
+}
+
+#role {
+  background-image: url(media/modules/role.png);
 }

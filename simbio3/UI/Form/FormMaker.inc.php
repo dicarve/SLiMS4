@@ -93,7 +93,7 @@ abstract class FormMaker
         // field required
         $_required = false;
         if (isset($arr_element_def['required'])) {
-            $_required = true;
+            $_required = $arr_element_def['required']?true:false;
         }
         // field description
         $_description = '';
@@ -109,6 +109,11 @@ abstract class FormMaker
         $_attr = '';
         if (isset($arr_element_def['attr'])) {
             $_attr = Utility::createHTMLAttribute($arr_element_def['attr']);
+        }
+        // field css classes
+        $_classes = '';
+        if (isset($arr_element_def['class'])) {
+            $_classes = $arr_element_def['class'];
         }
 
         // creating element instance
@@ -141,6 +146,9 @@ abstract class FormMaker
             $_form_element->content = isset($arr_element_def['content'])?trim($arr_element_def['content']):'';
             return $_form_element;
         }
+
+        // set class
+        $_form_element->cssClass = $_classes;
 
         // require field marker
         if ($_required) {
@@ -213,11 +221,11 @@ abstract class FormMaker
         $_removed = array();
         if (is_array($mix_form_id)) {
             foreach ($mix_form_id as $_id) {
-                $_removed[] = $this->elements[$_id];
+                $_removed[$_id] = $this->elements[$_id];
                 unset($this->elements[$_id]);
             }
         } else if (is_string($mix_form_id)) {
-            $_removed[] = $this->elements[$mix_form_id];
+            $_removed[$mix_form_id] = $this->elements[$mix_form_id];
             unset($this->elements[$mix_form_id]);
         }
 

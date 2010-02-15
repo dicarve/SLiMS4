@@ -29,8 +29,10 @@ class Item extends SimbioModel {
      * @param   object      $obj_framework: Simbio framework object
      * @return  array       an array of module information containing
      */
-    public function moduleInfo(&$obj_framework) {
-
+    public static function moduleInfo(&$obj_framework) {
+        return array('module-name' => 'Item',
+            'module-desc' => 'Enable management of bibliographic copies/item records',
+            'module-depends' => array());
     }
 
 
@@ -41,7 +43,7 @@ class Item extends SimbioModel {
      * @param   object      $obj_framework: Simbio framework object
      * @return  array       an array of privileges for this module
      */
-    public function modulePrivileges(&$obj_framework) {
+    public static function modulePrivileges(&$obj_framework) {
 
     }
 
@@ -95,6 +97,25 @@ class Item extends SimbioModel {
 
     }
 
+
+    /**
+     * Method returning an array of application main menu and navigation menu
+     *
+     * @param   object  $simbio: Simbio framework object
+     * @param   string  $str_menu_type: value can be 'main' or 'navigation'
+     * @param   string  $str_current_module: current module called by framework
+     * @param   string  $str_current_method: current method of current module called by framework
+     * @return  array
+     */
+    public function menu(&$simbio, $str_menu_type = 'navigation', $str_current_module = '', $str_current_method = '') {
+        $_menu = array();
+        if ($str_menu_type != 'main' && $str_current_module == 'admin' && $str_current_method == 'biblio') {
+            $_menu['Item'][] = array('link' => 'item', 'name' => __('Copies/Items List'), 'description' => __('List of copies/items'));
+            $_menu['Item'][] = array('link' => 'item/export', 'name' => __('Export Copies/Items'), 'description' => __('Export copies/items records'));
+            $_menu['Item'][] = array('link' => 'item/import', 'name' => __('Import Copies/Items'), 'description' => __('Import copies/items records'));
+        }
+        return $_menu;
+    }
 
 
     /**

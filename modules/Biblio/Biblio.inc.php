@@ -31,8 +31,10 @@ class Biblio extends SimbioModel {
      * @param   object      $simbio: Simbio framework object
      * @return  array       an array of module information containing
      */
-    public function moduleInfo(&$simbio) {
-
+    public static function moduleInfo(&$simbio) {
+        return array('module-name' => 'Biblio',
+            'module-desc' => 'Biblio module enable application users to manage bibliographical records/metadata',
+            'module-depends' => array());
     }
 
 
@@ -43,7 +45,7 @@ class Biblio extends SimbioModel {
      * @param   object      $simbio: Simbio framework object
      * @return  array       an array of privileges for this module
      */
-    public function modulePrivileges(&$simbio) {
+    public static function modulePrivileges(&$simbio) {
 
     }
 
@@ -160,30 +162,30 @@ class Biblio extends SimbioModel {
     }
 
 
-
     /**
      * Method returning an array of application main menu and navigation menu
      *
      * @param   object  $simbio: Simbio framework object
      * @param   string  $str_menu_type: value can be 'main' or 'navigation'
+     * @param   string  $str_current_module: current module called by framework
+     * @param   string  $str_current_method: current method of current module called by framework
      * @return  array
      */
-    public function menu(&$simbio, $str_menu_type = 'navigation') {
+    public function menu(&$simbio, $str_menu_type = 'navigation', $str_current_module = '', $str_current_method = '') {
         $_menu = array();
         if ($str_menu_type == 'main') {
             $_menu[] = array('link' => 'admin/biblio', 'name' => __('Bibliography'), 'description' => __('Bibliography module used to manage library collections metadata'));
         } else {
-            $_menu['Catalog'][] = array('link' => 'biblio/add', 'name' => 'Add New Catalog', 'description' => 'Add new catalog record');
-            $_menu['Catalog'][] = array('link' => 'biblio/list', 'name' => 'Catalog List', 'description' => 'List records of existing catalog');
-            $_menu['Catalog'][] = array('link' => 'biblio/z3950', 'name' => 'Z3950 Service', 'description' => 'Z39.50 protocol metadata retrieval');
-            $_menu['Item'][] = array('link' => 'item', 'name' => 'Copies/Items List', 'description' => 'List of copies/items');
-            $_menu['Schema'][] = array('link' => 'biblio/schema', 'name' => 'Bibliographic Schema', 'description' => 'Manage bibliographic data schema');
-            $_menu['Schema'][] = array('link' => 'biblio/schema/add', 'name' => 'Add Schema', 'description' => 'Add new bibliographic data schema');
-            $_menu['Tools'][] = array('link' => 'biblio/config', 'name' => 'Configuration', 'description' => 'Module configuration');
-            $_menu['Tools'][] = array('link' => 'biblio/export', 'name' => 'Export Catalog', 'description' => 'Export catalog records');
-            $_menu['Tools'][] = array('link' => 'item/export', 'name' => 'Export Copies/Items', 'description' => 'Export copies/items records');
-            $_menu['Tools'][] = array('link' => 'biblio/import', 'name' => 'Import Catalog', 'description' => 'Import catalog records');
-            $_menu['Tools'][] = array('link' => 'item/import', 'name' => 'Import Copies/Items', 'description' => 'Import copies/items records');
+            if ($str_current_module == 'admin' && $str_current_method == 'biblio') {
+                $_menu['Catalog'][] = array('link' => 'biblio/add', 'name' => 'Add New Catalog', 'description' => 'Add new catalog record');
+                $_menu['Catalog'][] = array('link' => 'biblio/list', 'name' => 'Catalog List', 'description' => 'List records of existing catalog');
+                $_menu['Catalog'][] = array('link' => 'biblio/z3950', 'name' => 'Z3950 Service', 'description' => 'Z39.50 protocol metadata retrieval');
+                $_menu['Schema'][] = array('link' => 'biblio/schema', 'name' => 'Bibliographic Schema', 'description' => 'Manage bibliographic data schema');
+                $_menu['Schema'][] = array('link' => 'biblio/schema/add', 'name' => 'Add Schema', 'description' => 'Add new bibliographic data schema');
+                $_menu['Tools'][] = array('link' => 'biblio/config', 'name' => 'Configuration', 'description' => 'Module configuration');
+                $_menu['Tools'][] = array('link' => 'biblio/export', 'name' => 'Export Catalog', 'description' => 'Export catalog records');
+                $_menu['Tools'][] = array('link' => 'biblio/import', 'name' => 'Import Catalog', 'description' => 'Import catalog records');
+            }
         }
         return $_menu;
     }

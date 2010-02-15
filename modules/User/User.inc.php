@@ -29,8 +29,10 @@ class User extends SimbioModel {
      * @param   object      $simbio: Simbio framework object
      * @return  array       an array of module information containing
      */
-    public function moduleInfo(&$simbio) {
-
+    public static function moduleInfo(&$simbio) {
+        return array('module-name' => 'User',
+            'module-desc' => 'Enable application user management and authentication based on roles',
+            'module-depends' => array());
     }
 
 
@@ -41,7 +43,7 @@ class User extends SimbioModel {
      * @param   object      $simbio: Simbio framework object
      * @return  array       an array of privileges for this module
      */
-    public function modulePrivileges(&$simbio) {
+    public static function modulePrivileges(&$simbio) {
 
     }
 
@@ -70,25 +72,13 @@ class User extends SimbioModel {
 
 
     /**
-     * Configuration for Biblio module
+     * Configuration for module
      *
      * @param   object      $simbio: Simbio framework object
      * @param   string      $str_args: method main argument
      * @return  void
      */
     public function config(&$simbio, $str_args) {
-
-    }
-
-
-    /**
-     * Get detail of bibliographic data
-     *
-     * @param   object      $simbio: Simbio framework object
-     * @param   string      $str_args: an ID of Bibliographic data to fetch
-     * @return  void
-     */
-    public function detail(&$simbio, $str_args) {
 
     }
 
@@ -145,11 +135,16 @@ class User extends SimbioModel {
                 $_SESSION['User']['ID'] = $_user_d['user_id'];
                 $_SESSION['User']['Name'] = $_user_d['realname'];
                 $_SESSION['User']['Username'] = $_user_d['username'];
+                $_roles = @unserialize($_user_d['roles']);
                 $_SESSION['User']['Priv'] = array();
                 // get user access privileges
-                $_access = $simbio->dbQuery('SELECT access FROM {users_access} WHERE user_id='.$_user_d['user_id']);
-                while ($_access_d = $_access->fetch_row()) {
-                    $_SESSION['User']['Priv'][] = $_access_d[0];
+                if ($_roles && is_array($_roles)) {
+                    foreach ($_roles as $_role) {
+                        $_access = $simbio->dbQuery("SELECT access FROM {role_access} WHERE role_id=$_role");
+                        while ($_access_d = $_access->fetch_row()) {
+                            $_SESSION['User']['Priv'][$_access_d[0]] = $_access_d[0];
+                        }
+                    }
                 }
                 header('Location: index.php?p=admin');
                 exit();
@@ -185,6 +180,37 @@ class User extends SimbioModel {
             Utility::destroySessionCookie(APP_SESSION_COOKIE_NAME, APP_WEB_BASE);
             $simbio->addInfo('USER_LOGGED_OUT', $_name.', you have been successfully logged out.');
         }
+    }
+
+
+    /**
+     * Method to manage user and roles
+     *
+     * @param   object      $simbio: Simbio framework object
+     * @param   string      $str_args: method main argument
+     * @return  void
+     */
+    public function manage(&$simbio, $str_args) {
+
+    }
+
+
+    /**
+     * Method returning an array of application main menu and navigation menu
+     *
+     * @param   object      $simbio: Simbio framework object
+     * @param   string      $str_args: method main argument
+     * @param   string  $str_current_module: current module called by framework
+     * @param   string  $str_current_method: current method of current module called by framework
+     * @return  array
+     */
+    public function menu(&$simbio, $str_menu_type = 'navigation', $str_current_module = '', $str_current_method = '') {
+        $_menu = array();
+        if ($str_menu_type != 'main' && $str_current_module == 'admin' && $str_current_method == 'system') {
+            $_menu['System'][] = array('link' => 'user/manage', 'name' => __('Users'), 'description' => __('Application user managements'));
+            $_menu['System'][] = array('link' => 'user/manage/role', 'name' => __('Roles/Groups'), 'description' => __('Application user role/group managements'));
+        }
+        return $_menu;
     }
 
 

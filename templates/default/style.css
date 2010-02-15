@@ -377,3 +377,48 @@ div.tabs
   background: #fff url(media/header-bg.png) right top no-repeat;
   border: 1px solid #777;
 }
+
+.published {
+  color: #003380;
+  font-weight: bold;
+}
+
+.unpublished {
+  color: #f00;
+  font-weight: bold;
+}
+
+.searchable {
+  width: 50%;
+}
+
+/* AJAX drop down list */
+.ajax-dropdown {
+    display: none;
+    position: absolute;
+    border: 1px solid #727272;
+    border-top: 0;
+    margin: 0;
+    padding: 0;
+    height: 100px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    background-color: #FFFFFF;
+    list-style-type: none;
+    list-style-position: outside;
+}
+
+.ajax-dropdown > li {
+    margin: 0;
+    padding: 0;
+}
+
+.ajax-dropdown > li > .ajax-dd-item,.ajax-dd-item:hover {
+    display: block;
+    padding: 2px;
+    text-decoration: none;
+}
+
+.ajax-dropdown > li > .ajax-dd-item:hover {
+    background-color: #CCCCCC;
+}

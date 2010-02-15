@@ -40,7 +40,7 @@ abstract class SimbioModel {
      * @param   object      $simbio: Simbio framework object
      * @return  array       an array of module information containing
      */
-    abstract public function moduleInfo(&$simbio);
+    abstract public static function moduleInfo(&$simbio);
 
 
     /**
@@ -50,7 +50,7 @@ abstract class SimbioModel {
      * @param   object      $simbio: Simbio framework object
      * @return  array       an array of privileges for this module
      */
-    abstract public function modulePrivileges(&$simbio);
+    abstract public static function modulePrivileges(&$simbio);
 
 
     /**

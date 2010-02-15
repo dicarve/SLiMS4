@@ -48,7 +48,7 @@ jQuery.fn.simbioTable = function(params) {
         // on click highlight row with new background color
         if (this.highlighted) {
             this.highlighted = false;
-            jQuery(this).removeClass('highlighted').removeClass('last-highlighted').css('background-color', this.originColor);
+            jQuery(this).removeClass('highlighted last-highlighted').css({'background-color': this.originColor}).find('td').css({'border-bottom': 0});
             // uncheck the checkbox on row if exists
             jQuery(this).find('input:checkbox').each(function() {
                 this.checked = false;
@@ -80,8 +80,7 @@ jQuery.fn.simbioTable = function(params) {
             // remove all last-highlighted row class
             parentTable.find('.last-highlighted').removeClass('last-highlighted');
             // highlight current clicked row
-            jQuery(this).addClass('highlighted').addClass('last-highlighted').css('background-color', options.highlightCol);
-
+            jQuery(this).addClass('highlighted last-highlighted').css({'background-color': options.highlightCol}).find('td').css('border-bottom', '1px solid #666');
         }
     });
 
@@ -100,7 +99,7 @@ jQuery.fn.dynamicField = function() {
     this.find('.add').click(function() {
         // get div parent element
         var currentField = jQuery(this).parent();
-        var addField = currentField.clone();
+        var addField = currentField.clone(true);
         // append remove button and remove ".add" button for additional field
         addField.append(' <a href="#" class="remove-field">Remove</a>').children().remove('.add');
         // add cloned field after
@@ -145,6 +144,17 @@ jQuery.fn.enableForm = function() {
         this.disabled = false;
     });
     return enabledForm;
+}
+
+
+/**
+ * JQuery method to unbind all related event on specified selector
+ */
+jQuery.fn.unRegisterEvents = function() {
+    var container = jQuery(this);
+    // unbind all event handlers
+    container.find('a,table,tr,td,input,textarea,div').unbind();
+    return container;
 }
 
 
